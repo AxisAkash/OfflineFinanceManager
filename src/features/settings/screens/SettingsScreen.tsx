@@ -5,13 +5,20 @@ import { spacing, typography } from '../../../shared/theme/spacing';
 import { Card, Button } from '../../../shared/components';
 
 interface SettingsScreenProps {
+  onNavigateSavings?: () => void;
+  onNavigateDebt?: () => void;
+  onNavigateRecurring?: () => void;
+  onNavigateReports?: () => void;
   onBackup?: () => void;
   onRestore?: () => void;
   onExport?: () => void;
-  onClearData?: () => void;
 }
 
 export function SettingsScreen({
+  onNavigateSavings,
+  onNavigateDebt,
+  onNavigateRecurring,
+  onNavigateReports,
   onBackup,
   onRestore,
   onExport,
@@ -23,6 +30,39 @@ export function SettingsScreen({
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Features
+      </Text>
+      <Card style={styles.section}>
+        <Button
+          title="Savings Goals"
+          onPress={() => onNavigateSavings?.()}
+          variant="secondary"
+          fullWidth
+        />
+        <View style={styles.spacer} />
+        <Button
+          title="Debt Tracker"
+          onPress={() => onNavigateDebt?.()}
+          variant="secondary"
+          fullWidth
+        />
+        <View style={styles.spacer} />
+        <Button
+          title="Recurring Transactions"
+          onPress={() => onNavigateRecurring?.()}
+          variant="secondary"
+          fullWidth
+        />
+        <View style={styles.spacer} />
+        <Button
+          title="Reports"
+          onPress={() => onNavigateReports?.()}
+          variant="secondary"
+          fullWidth
+        />
+      </Card>
+
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
         Appearance
       </Text>
