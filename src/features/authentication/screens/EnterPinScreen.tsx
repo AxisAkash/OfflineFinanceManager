@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Input, Button } from '../../../shared/components';
-import { verifyPin } from '../../../core/encryption';
+import { isBiometricEnabled } from '../../../core/encryption';
 
 interface EnterPinScreenProps {
-  onSuccess: () => void;
+  onPinSubmit: (pin: string) => Promise<boolean>;
+  onBiometricLogin: () => Promise<boolean>;
   onLockout?: () => void;
 }
 
-export function EnterPinScreen({ onSuccess, onLockout }: EnterPinScreenProps) {
+export function EnterPinScreen({
+  onPinSubmit,
+  onBiometricLogin,
+  onLockout,
+}: EnterPinScreenProps) {
   const { colors } = useTheme();
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
   const MAX_ATTEMPTS = 5;
+
+  useEffect(() => {
+    checkBiometricStatus();
+  }, []);
+
+  const checkBiometricStatus = async () => {
+    const enabled = await isBiometricEnabled();
+    setBiometricEnabled(enabled);
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -28,12 +44,9 @@ export function EnterPinScreen({ onSuccess, onLockout }: EnterPinScreenProps) {
 
     try {
       setIsLoading(true);
-      const isValid = await verifyPin(pin);
+      const success = await onPinSubmit(pin);
 
-      if (isValid) {
-        setAttempts(0);
-        onSuccess();
-      } else {
+      if (!success) {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
 
@@ -47,6 +60,17 @@ export function EnterPinScreen({ onSuccess, onLockout }: EnterPinScreenProps) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleBiometric = async () => {
+    try {
+      setIsBiometricLoading(true);
+      await onBiometricLogin();
+    } catch {
+      setError('Biometric authentication failed');
+    } finally {
+      setIsBiometricLoading(false);
     }
   };
 
@@ -79,6 +103,17 @@ export function EnterPinScreen({ onSuccess, onLockout }: EnterPinScreenProps) {
           fullWidth
           size="lg"
         />
+
+        {biometricEnabled && (
+          <Button
+            title="Use Fingerprint / Face ID"
+            onPress={handleBiometric}
+            loading={isBiometricLoading}
+            variant="outline"
+            fullWidth
+            size="md"
+          />
+        )}
       </View>
     </View>
   );

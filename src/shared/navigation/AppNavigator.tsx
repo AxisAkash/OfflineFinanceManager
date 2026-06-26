@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,7 +12,7 @@ import { TransactionsScreen } from '../../features/transaction/screens/Transacti
 import { BudgetScreen } from '../../features/budget/screens/BudgetScreen';
 import { AnalyticsScreen } from '../../features/analytics/screens/AnalyticsScreen';
 import { SettingsScreen } from '../../features/settings/screens/SettingsScreen';
-import { isPinSetup } from '../../core/encryption';
+import { useAuth } from '../../features/authentication/hooks/useAuth';
 import { typography } from '../theme/spacing';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -116,11 +116,15 @@ function MainTabs() {
 }
 
 function AuthNavigator({
-  onAuthSuccess,
   hasPin,
+  loginWithPin,
+  loginWithBiometrics,
+  createPin,
 }: {
-  onAuthSuccess: () => void;
   hasPin: boolean;
+  loginWithPin: (pin: string) => Promise<boolean>;
+  loginWithBiometrics: () => Promise<boolean>;
+  createPin: (pin: string, enableBiometrics: boolean) => Promise<boolean>;
 }) {
   return (
     <AuthStack.Navigator
@@ -128,10 +132,15 @@ function AuthNavigator({
       initialRouteName={hasPin ? 'EnterPin' : 'CreatePin'}
     >
       <AuthStack.Screen name="CreatePin">
-        {() => <CreatePinScreen onComplete={onAuthSuccess} />}
+        {() => <CreatePinScreen onComplete={createPin} />}
       </AuthStack.Screen>
       <AuthStack.Screen name="EnterPin">
-        {() => <EnterPinScreen onSuccess={onAuthSuccess} />}
+        {() => (
+          <EnterPinScreen
+            onPinSubmit={loginWithPin}
+            onBiometricLogin={loginWithBiometrics}
+          />
+        )}
       </AuthStack.Screen>
     </AuthStack.Navigator>
   );
@@ -139,30 +148,14 @@ function AuthNavigator({
 
 export function AppNavigator() {
   const { colors } = useTheme();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasPin, setHasPin] = useState(false);
-
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
-    try {
-      const pinSetup = await isPinSetup();
-      setHasPin(pinSetup);
-      setIsAuthenticated(false);
-    } catch {
-      setHasPin(false);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAuthSuccess = useCallback(() => {
-    setIsAuthenticated(true);
-  }, []);
+  const {
+    isLoading,
+    isAuthenticated,
+    hasPin,
+    loginWithPin,
+    loginWithBiometrics,
+    createPin,
+  } = useAuth();
 
   if (isLoading) {
     return (
@@ -184,7 +177,9 @@ export function AppNavigator() {
             {() => (
               <AuthNavigator
                 hasPin={hasPin}
-                onAuthSuccess={handleAuthSuccess}
+                loginWithPin={loginWithPin}
+                loginWithBiometrics={loginWithBiometrics}
+                createPin={createPin}
               />
             )}
           </RootStack.Screen>
