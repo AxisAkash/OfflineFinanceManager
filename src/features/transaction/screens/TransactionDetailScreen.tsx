@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  TouchableOpacity,
 } from 'react-native';
 import { useTheme } from '../../../shared/theme';
-import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
+import { spacing, typography } from '../../../shared/theme/spacing';
 import { Card, Button, LoadingScreen, ErrorMessage } from '../../../shared/components';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
@@ -28,6 +28,7 @@ export function TransactionDetailScreen({
   onEdit,
 }: TransactionDetailScreenProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -66,12 +67,12 @@ export function TransactionDetailScreen({
 
   const handleDelete = useCallback(() => {
     Alert.alert(
-      'Delete Transaction',
-      'Are you sure you want to delete this transaction? This action can be undone.',
+      t.transaction.delete,
+      t.transaction.deleteConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Delete',
+          text: t.common.delete,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -79,14 +80,14 @@ export function TransactionDetailScreen({
                 await transactionRepository.deleteTransaction(transaction.id);
               }
               onClose();
-            } catch (err) {
-              Alert.alert('Error', 'Failed to delete transaction');
+            } catch {
+              Alert.alert(t.common.error, t.transaction.deleteFailed);
             }
           },
         },
       ]
     );
-  }, [transaction, onClose]);
+  }, [transaction, onClose, t]);
 
   if (isLoading) {
     return <LoadingScreen type="detail" />;
@@ -95,7 +96,7 @@ export function TransactionDetailScreen({
   if (error || !transaction) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ErrorMessage message={error || 'Transaction not found'} onRetry={loadDetail} />
+        <ErrorMessage message={error || t.transaction.notFound} onRetry={loadDetail} />
       </View>
     );
   }
@@ -109,7 +110,7 @@ export function TransactionDetailScreen({
     >
       <Card style={styles.amountCard}>
         <Text style={[styles.amountLabel, { color: colors.textTertiary }]}>
-          {isIncome ? 'Income' : 'Expense'}
+          {isIncome ? t.transaction.income : t.transaction.expense}
         </Text>
         <Text
           style={[
@@ -124,28 +125,28 @@ export function TransactionDetailScreen({
       <Card style={styles.detailCard}>
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-            Description
+            {t.transaction.description}
           </Text>
           <Text style={[styles.detailValue, { color: colors.text }]}>
-            {transaction.description || category?.name || 'No description'}
+            {transaction.description || category?.name || t.common.noData}
           </Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-            Category
+            {t.transaction.category}
           </Text>
           <View style={styles.categoryBadge}>
             <View style={[styles.categoryDot, { backgroundColor: category?.color || colors.primary }]} />
             <Text style={[styles.detailValue, { color: colors.text }]}>
-              {category?.name || 'Unknown'}
+              {category?.name || t.common.unknown}
             </Text>
           </View>
         </View>
         <View style={styles.divider} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-            Date
+            {t.transaction.date}
           </Text>
           <Text style={[styles.detailValue, { color: colors.text }]}>
             {formatDate(transaction.date)}
@@ -154,10 +155,10 @@ export function TransactionDetailScreen({
         <View style={styles.divider} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-            Wallet
+            {t.transaction.wallet}
           </Text>
           <Text style={[styles.detailValue, { color: colors.text }]}>
-            {wallet?.name || 'Unknown'}
+            {wallet?.name || t.common.unknown}
           </Text>
         </View>
         {transaction.isRecurring && (
@@ -165,10 +166,10 @@ export function TransactionDetailScreen({
             <View style={styles.divider} />
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-                Recurring
+                {t.transaction.recurring}
               </Text>
               <Text style={[styles.detailValue, { color: colors.text }]}>
-                Yes
+                {t.common.yes}
               </Text>
             </View>
           </>
@@ -177,7 +178,7 @@ export function TransactionDetailScreen({
 
       <View style={styles.actions}>
         <Button
-          title="Edit Transaction"
+          title={t.transaction.edit}
           onPress={onEdit}
           variant="secondary"
           fullWidth
@@ -185,7 +186,7 @@ export function TransactionDetailScreen({
         />
         <View style={styles.actionSpacer} />
         <Button
-          title="Delete Transaction"
+          title={t.transaction.delete}
           onPress={handleDelete}
           variant="danger"
           fullWidth
@@ -246,10 +247,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   divider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: 'transparent',
   },
   actions: {
     marginTop: spacing.lg,

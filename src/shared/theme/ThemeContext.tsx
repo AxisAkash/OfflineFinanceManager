@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useColorScheme } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { lightColors, darkColors, ColorScheme } from './colors';
 
 type ThemeMode = 'light' | 'dark' | 'system';
+
+const STORAGE_KEY = 'app_theme_mode';
 
 interface ThemeContextType {
   colors: ColorScheme;
@@ -20,13 +23,44 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>('system');
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    loadTheme();
+  }, []);
+
+  const loadTheme = async () => {
+    try {
+      const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+      if (stored === 'light' || stored === 'dark' || stored === 'system') {
+        setModeState(stored);
+      }
+    } catch {
+      // Default to system
+    } finally {
+      setLoaded(true);
+    }
+  };
+
+  const setMode = useCallback(async (newMode: ThemeMode) => {
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEY, newMode);
+      setModeState(newMode);
+    } catch {
+      setModeState(newMode);
+    }
+  }, []);
 
   const isDark = mode === 'system'
     ? systemScheme === 'dark'
     : mode === 'dark';
 
   const colors = isDark ? darkColors : lightColors;
+
+  if (!loaded) {
+    return <>{children}</>;
+  }
 
   return (
     <ThemeContext.Provider value={{ colors, mode, isDark, setMode }}>

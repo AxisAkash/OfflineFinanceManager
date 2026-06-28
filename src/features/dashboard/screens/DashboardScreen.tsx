@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Animated, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
 import { Card, SkeletonList, ErrorMessage, EmptyState, FAB } from '../../../shared/components';
 import { TransactionItem } from '../../transaction/components/TransactionItem';
@@ -17,6 +19,7 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -30,9 +33,11 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     if (!isLoading) {
@@ -116,9 +121,9 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           icon={'\uD83D\uDCB0'}
-          title="No transactions yet"
-          description="Start tracking your finances by adding your first income or expense"
-          actionLabel="Add First Transaction"
+          title={t.dashboard.noTransactions}
+          description={t.dashboard.noTransactionsDescription}
+          actionLabel={t.dashboard.addFirst}
           onAction={onAddTransaction}
         />
         <FAB onPress={onAddTransaction || (() => {})} />
@@ -161,11 +166,11 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
             <Card style={[styles.walletCard, { borderColor: colors.primary + '20' }]}>
               <View style={styles.walletCardHeader}>
                 <Text style={[styles.balanceLabel, { color: colors.textTertiary }]}>
-                  {currentWallet ? currentWallet.name : 'Total Balance'}
+                  {currentWallet ? currentWallet.name : t.dashboard.totalBalance}
                 </Text>
                 {wallets.length > 1 && (
                   <Text style={[styles.swipeHint, { color: colors.textTertiary }]}>
-                    Tap to switch
+                    {t.dashboard.tapToSwitch}
                   </Text>
                 )}
               </View>
@@ -178,7 +183,7 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={[styles.summaryLabel, { color: colors.income }]}>
-                    Income
+                    {t.dashboard.income}
                   </Text>
                   <Text style={[styles.summaryAmount, { color: colors.income }]}>
                     +{formatCurrency(monthlyIncome)}
@@ -186,7 +191,7 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
                 </View>
                 <View style={styles.summaryItem}>
                   <Text style={[styles.summaryLabel, { color: colors.expense }]}>
-                    Expenses
+                    {t.dashboard.expenses}
                   </Text>
                   <Text style={[styles.summaryAmount, { color: colors.expense }]}>
                     -{formatCurrency(monthlyExpenses)}
@@ -215,19 +220,19 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
 
           <View style={styles.quickStatsRow}>
             <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Net Worth</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t.dashboard.netWorth}</Text>
               <Text style={[styles.statValue, { color: colors.text }]}>
                 {formatCurrency(netWorth)}
               </Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Savings Rate</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t.dashboard.savingsRate}</Text>
               <Text style={[styles.statValue, { color: savingsRate >= 0 ? colors.income : colors.expense }]}>
                 {savingsRate.toFixed(1)}%
               </Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Health</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t.dashboard.health}</Text>
               <Text style={[styles.statValue, { color: colors.primary }]}>
                 {healthScore}
               </Text>
@@ -237,7 +242,7 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
           {budgetOverview.totalBudget > 0 && (
             <Card style={[styles.budgetCard, { borderLeftColor: budgetOverview.remaining >= 0 ? colors.primary : colors.expense }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Budget Overview
+                {t.dashboard.budgetOverview}
               </Text>
               <View style={styles.budgetBarContainer}>
                 <View style={[styles.budgetBar, { backgroundColor: colors.surfaceVariant }]}>
@@ -260,13 +265,13 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
 
           <View style={styles.sectionRow}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent Transactions
+              {t.transaction.recent}
             </Text>
           </View>
           {recentTransactions.length === 0 ? (
             <Card>
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No transactions yet. Start tracking your spending!
+                {t.dashboard.noTransactionsCard}
               </Text>
             </Card>
           ) : (

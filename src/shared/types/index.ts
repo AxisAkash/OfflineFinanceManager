@@ -8,6 +8,8 @@ export interface Transaction {
   date: string;
   isRecurring: boolean;
   recurringId?: string;
+  notes?: string;
+  time?: string;
   createdAt: string;
   updatedAt: string;
 }

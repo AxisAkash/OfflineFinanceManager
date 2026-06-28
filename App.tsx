@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from './src/shared/theme';
+import { LanguageProvider, useLanguage } from './src/shared/localization/LanguageContext';
 import { AppNavigator } from './src/shared/navigation/AppNavigator';
 import { initializeDatabase } from './src/core/database/connection';
 import { typography } from './src/shared/theme/spacing';
 
 function AppContent() {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +58,9 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

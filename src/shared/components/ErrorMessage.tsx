@@ -18,8 +18,10 @@ export function ErrorMessage({
   const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon}>!</Text>
+    <View style={[styles.container, { backgroundColor: colors.error + '10' }]}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.error + '20' }]}>
+        <Text style={[styles.icon, { color: colors.error }]}>!</Text>
+      </View>
       <Text style={[styles.message, { color: colors.error }]}>{message}</Text>
       {onRetry && (
         <Button
@@ -39,19 +41,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xxl,
+    borderRadius: 12,
+    margin: spacing.lg,
+  },
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    overflow: 'hidden',
   },
   icon: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#F44336',
-    marginBottom: spacing.md,
-    width: 56,
-    height: 56,
-    lineHeight: 56,
-    textAlign: 'center',
-    borderRadius: 28,
-    backgroundColor: '#FFEBEE',
-    overflow: 'hidden',
   },
   message: {
     ...typography.body,

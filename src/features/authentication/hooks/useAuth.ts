@@ -65,7 +65,7 @@ export function useAuth(): AuthState & AuthActions {
       appState.current.match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
-      tryBiometricAuth();
+      void tryBiometricAuth();
     }
 
     appState.current = nextAppState;

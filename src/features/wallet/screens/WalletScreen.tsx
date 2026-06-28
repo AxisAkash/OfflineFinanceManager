@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
 import { EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/components';
 import { useWallets } from '../hooks/useWallets';
@@ -16,6 +17,7 @@ import { formatCurrency } from '../../../shared/utils';
 
 export function WalletScreen() {
   const { colors } = useTheme();
+  const { t, translate } = useLanguage();
   const {
     wallets,
     isLoading,
@@ -27,20 +29,20 @@ export function WalletScreen() {
   } = useWallets();
 
   const handleCreate = async () => {
-    const success = await createWallet('New Wallet');
+    const success = await createWallet(t.wallet.mainWallet);
     if (!success) {
-      Alert.alert('Error', 'Failed to create wallet');
+      Alert.alert(t.common.error, t.wallet.createFailed);
     }
   };
 
   const handleArchive = (wallet: Wallet) => {
     Alert.alert(
-      'Archive Wallet',
-      `Are you sure you want to archive "${wallet.name}"?`,
+      t.wallet.archive,
+      translate('wallet.archiveConfirm', { name: wallet.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Archive',
+          text: t.wallet.archive,
           style: 'destructive',
           onPress: () => archiveWallet(wallet.id),
         },
@@ -60,18 +62,18 @@ export function WalletScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Wallets
+          {t.wallet.title}
         </Text>
         <Text style={[styles.totalBalance, { color: colors.primary }]}>
-          {formatCurrency(totalBalance)}
+          {t.wallet.totalBalance}: {formatCurrency(totalBalance)}
         </Text>
       </View>
 
       {wallets.length === 0 ? (
         <EmptyState
-          title="No Wallets"
-          description="Create your first wallet to start tracking your finances"
-          actionLabel="Create Wallet"
+          title={t.wallet.noWallets}
+          description={t.wallet.noWalletsDescription}
+          actionLabel={t.wallet.createFirst}
           onAction={handleCreate}
         />
       ) : (

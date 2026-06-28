@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Input, Button } from '../../../shared/components';
 import { validatePin } from '../../../shared/utils';
@@ -12,6 +13,7 @@ interface CreatePinScreenProps {
 
 export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +35,12 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
 
     const validation = validatePin(pin);
     if (!validation.isValid) {
-      setError(validation.error || 'Invalid PIN');
+      setError(validation.error || t.auth.invalidPin);
       return;
     }
 
     if (pin !== confirmPin) {
-      setError('PINs do not match');
+      setError(t.auth.pinMatchError);
       return;
     }
 
@@ -46,10 +48,10 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
       setIsLoading(true);
       const success = await onComplete(pin, enableBiometrics);
       if (!success) {
-        setError('Failed to create PIN. Please try again.');
+        setError(t.auth.pinSetupFailed);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set PIN');
+      setError(err instanceof Error ? err.message : t.app.error);
     } finally {
       setIsLoading(false);
     }
@@ -64,15 +66,15 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Create Security PIN
+          {t.auth.createPin}
         </Text>
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Choose a 4-6 digit PIN to protect your financial data
+          {t.auth.createPinDescription}
         </Text>
       </View>
 
       <Input
-        label="Enter PIN"
+        label={t.auth.enterPin}
         value={pin}
         onChangeText={setPin}
         keyboardType="number-pad"
@@ -83,7 +85,7 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
       />
 
       <Input
-        label="Confirm PIN"
+        label={t.auth.confirmPin}
         value={confirmPin}
         onChangeText={setConfirmPin}
         keyboardType="number-pad"
@@ -96,10 +98,10 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
         <View style={[styles.biometricRow, { borderColor: colors.border }]}>
           <View style={styles.biometricInfo}>
             <Text style={[styles.biometricLabel, { color: colors.text }]}>
-              Enable Biometrics
+              {t.auth.enableBiometrics}
             </Text>
             <Text style={[styles.biometricDescription, { color: colors.textSecondary }]}>
-              Use fingerprint or face ID to unlock
+              {t.auth.enableBiometricsDescription}
             </Text>
           </View>
           <Switch
@@ -112,7 +114,7 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
       )}
 
       <Button
-        title="Create PIN"
+        title={t.auth.createPin}
         onPress={handleSubmit}
         loading={isLoading}
         disabled={!pin || !confirmPin}

@@ -7,9 +7,12 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, Button, LoadingScreen } from '../../../shared/components';
+import { LoadingScreen } from '../../../shared/components';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { walletRepository } from '../../../core/repositories/walletRepository';
@@ -17,6 +20,7 @@ import { formatCurrency, formatDate } from '../../../shared/utils';
 
 export function ReportsScreen() {
   const { colors } = useTheme();
+  const { t, translate } = useLanguage();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateCSV = useCallback(async () => {
@@ -27,23 +31,30 @@ export function ReportsScreen() {
       const catMap = new Map(allCategories.map((c) => [c.id, c.name]));
 
       let csv = 'Date,Type,Category,Description,Amount\n';
-      transactions.forEach((t) => {
-        const date = formatDate(t.date);
-        const catName = catMap.get(t.categoryId) || 'Unknown';
-        csv += `${date},${t.type},${catName},"${t.description || ''}",${t.amount}\n`;
+      transactions.forEach((txn) => {
+        const date = formatDate(txn.date);
+        const catName = catMap.get(txn.categoryId) || t.common.unknown;
+        csv += `${date},${txn.type},${catName},"${txn.description || ''}",${txn.amount}\n`;
       });
 
-      Alert.alert(
-        'CSV Generated',
-        `${transactions.length} transactions exported.\n\nCopy the data or use Share to save.`,
-        [{ text: 'OK' }]
-      );
-    } catch (err) {
-      Alert.alert('Error', 'Failed to generate report');
+      const file = new File(Paths.cache, 'finance_export.csv');
+      file.write(csv);
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/csv',
+          dialogTitle: t.reports.csvGenerated,
+        });
+      } else {
+        Alert.alert(t.reports.csvGenerated, translate('reports.csvExported', { count: transactions.length }));
+      }
+    } catch {
+      Alert.alert(t.common.error, t.reports.generateFailed);
     } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [t, translate]);
 
   const generateMonthlySummary = useCallback(async () => {
     setIsGenerating(true);
@@ -56,20 +67,20 @@ export function ReportsScreen() {
       const balance = await walletRepository.getTotalBalance();
 
       Alert.alert(
-        'Monthly Summary',
-        `Period: ${formatDate(startOfMonth)} - ${formatDate(endOfMonth)}\n\n` +
-        `Income: ${formatCurrency(totals.income)}\n` +
-        `Expenses: ${formatCurrency(totals.expense)}\n` +
-        `Net: ${formatCurrency(totals.income - totals.expense)}\n` +
-        `Total Balance: ${formatCurrency(balance)}`,
-        [{ text: 'OK' }]
+        t.reports.monthlySummary,
+        `${t.reports.period}: ${formatDate(startOfMonth)} - ${formatDate(endOfMonth)}\n\n` +
+        `${t.analytics.income}: ${formatCurrency(totals.income)}\n` +
+        `${t.analytics.expenses}: ${formatCurrency(totals.expense)}\n` +
+        `${t.analytics.netIncome}: ${formatCurrency(totals.income - totals.expense)}\n` +
+        `${t.dashboard.totalBalance}: ${formatCurrency(balance)}`,
+        [{ text: t.app.ok }]
       );
-    } catch (err) {
-      Alert.alert('Error', 'Failed to generate summary');
+    } catch {
+      Alert.alert(t.common.error, t.reports.generateFailed);
     } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [t]);
 
   const generateCategoryReport = useCallback(async () => {
     setIsGenerating(true);
@@ -82,46 +93,46 @@ export function ReportsScreen() {
       const breakdown = await transactionRepository.getCategoryBreakdown(startOfMonth, endOfMonth);
       const catMap = new Map(allCategories.map((c) => [c.id, c]));
 
-      let report = 'Category Breakdown (This Month)\n\n';
+      let report = `${t.reports.categoryReport} (${t.reports.period}: ${formatDate(startOfMonth)} - ${formatDate(endOfMonth)})\n\n`;
       breakdown.forEach((b) => {
         const cat = catMap.get(b.categoryId);
-        report += `${cat?.name || 'Unknown'}: ${formatCurrency(b.amount)}\n`;
+        report += `${cat?.name || t.common.unknown}: ${formatCurrency(b.amount)}\n`;
       });
 
       Alert.alert(
-        'Category Report',
-        report || 'No expense data this month',
-        [{ text: 'OK' }]
+        t.reports.categoryReport,
+        report || `${t.reports.categoryReport}: ${translate('analytics.ofExpenses', { count: 0 })}`,
+        [{ text: t.app.ok }]
       );
-    } catch (err) {
-      Alert.alert('Error', 'Failed to generate report');
+    } catch {
+      Alert.alert(t.common.error, t.reports.generateFailed);
     } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [t, translate]);
 
   const reportTypes = [
     {
-      title: 'Monthly Summary',
-      description: 'Income, expenses, and net for current month',
+      title: t.reports.monthlySummary,
+      description: t.reports.monthlySummaryDesc,
       icon: '\uD83D\uDCC5',
       onPress: generateMonthlySummary,
     },
     {
-      title: 'Category Report',
-      description: 'Spending breakdown by category',
+      title: t.reports.categoryReport,
+      description: t.reports.categoryReportDesc,
       icon: '\uD83D\uDCCA',
       onPress: generateCategoryReport,
     },
     {
-      title: 'Export CSV',
-      description: 'Download all transactions as CSV',
+      title: t.reports.exportCSV,
+      description: t.reports.exportCSVDesc,
       icon: '\uD83D\uDCC4',
       onPress: generateCSV,
     },
     {
-      title: 'Annual Summary',
-      description: 'Year-to-date financial overview',
+      title: t.reports.annualSummary,
+      description: t.reports.annualSummaryDesc,
       icon: '\uD83D\uDCC8',
       onPress: async () => {
         setIsGenerating(true);
@@ -129,14 +140,14 @@ export function ReportsScreen() {
           const now = new Date();
           const totals = await transactionRepository.getYearlyTotals(now.getFullYear());
           Alert.alert(
-            `Annual Summary ${now.getFullYear()}`,
-            `Income: ${formatCurrency(totals.income)}\n` +
-            `Expenses: ${formatCurrency(totals.expense)}\n` +
-            `Net: ${formatCurrency(totals.income - totals.expense)}`,
-            [{ text: 'OK' }]
+            `${t.reports.annualSummary} ${now.getFullYear()}`,
+            `${t.analytics.income}: ${formatCurrency(totals.income)}\n` +
+            `${t.analytics.expenses}: ${formatCurrency(totals.expense)}\n` +
+            `${t.analytics.netIncome}: ${formatCurrency(totals.income - totals.expense)}`,
+            [{ text: t.app.ok }]
           );
         } catch {
-          Alert.alert('Error', 'Failed to generate annual summary');
+          Alert.alert(t.common.error, t.reports.generateFailed);
         } finally {
           setIsGenerating(false);
         }
@@ -150,9 +161,9 @@ export function ReportsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, { color: colors.text }]}>Reports</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{t.reports.title}</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Generate financial reports and summaries
+        {t.reports.description}
       </Text>
 
       {reportTypes.map((report, idx) => (

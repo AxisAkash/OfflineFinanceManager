@@ -1,5 +1,5 @@
 export const DATABASE_NAME = 'finance.db';
-export const DATABASE_VERSION = 2;
+export const DATABASE_VERSION = 3;
 
 export const CREATE_TABLES = `
   CREATE TABLE IF NOT EXISTS wallets (
@@ -36,6 +36,8 @@ export const CREATE_TABLES = `
     date TEXT NOT NULL,
     is_recurring INTEGER NOT NULL DEFAULT 0,
     recurring_id TEXT,
+    notes TEXT DEFAULT '',
+    time TEXT DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
@@ -202,7 +204,7 @@ export const EXPECTED_TABLES = [
 export const TABLE_COLUMNS: Record<string, string[]> = {
   wallets: ['id', 'name', 'balance', 'currency', 'icon', 'color', 'is_archived', 'created_at', 'updated_at'],
   categories: ['id', 'name', 'icon', 'color', 'type', 'budget_id', 'created_at', 'updated_at'],
-  transactions: ['id', 'wallet_id', 'category_id', 'amount', 'type', 'description', 'date', 'is_recurring', 'recurring_id', 'created_at', 'updated_at'],
+  transactions: ['id', 'wallet_id', 'category_id', 'amount', 'type', 'description', 'date', 'is_recurring', 'recurring_id', 'notes', 'time', 'created_at', 'updated_at'],
   budgets: ['id', 'category_id', 'amount', 'spent', 'period', 'start_date', 'end_date', 'created_at', 'updated_at'],
   savings_goals: ['id', 'name', 'target_amount', 'current_amount', 'deadline', 'icon', 'color', 'is_completed', 'created_at', 'updated_at'],
   debts: ['id', 'name', 'total_amount', 'remaining_amount', 'interest_rate', 'minimum_payment', 'due_date', 'lender', 'is_paid', 'created_at', 'updated_at'],

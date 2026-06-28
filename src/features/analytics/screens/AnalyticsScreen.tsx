@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
 import { Card, EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/components';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
@@ -24,6 +26,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 export function AnalyticsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
@@ -31,10 +36,6 @@ export function AnalyticsScreen() {
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([]);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrend[]>([]);
   const [selectedTrendMonth, setSelectedTrendMonth] = useState<number>(-1);
-
-  useEffect(() => {
-    loadAnalytics();
-  }, []);
 
   const loadAnalytics = useCallback(async () => {
     try {
@@ -90,6 +91,12 @@ export function AnalyticsScreen() {
     }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadAnalytics();
+    }, [loadAnalytics])
+  );
+
   if (isLoading) {
     return <LoadingScreen type="chart" />;
   }
@@ -103,12 +110,10 @@ export function AnalyticsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           icon={'\uD83D\uDCCA'}
-          title="No financial data"
-          description="Add transactions to see spending patterns, trends, and insights"
-          actionLabel="Add Sample Data"
-          onAction={() => {}}
-          secondaryLabel="Add First Transaction"
-          onSecondaryAction={() => {}}
+          title={t.analytics.noData}
+          description={t.analytics.noDataDescription}
+          actionLabel={t.analytics.addFirstTransaction}
+          onAction={() => navigation.navigate('AddTransaction')}
         />
       </View>
     );
@@ -126,18 +131,18 @@ export function AnalyticsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={[styles.title, { color: colors.text }]}>
-        Analytics
+        {t.analytics.title}
       </Text>
 
       <View style={styles.summaryRow}>
         <Card style={[styles.summaryCard, { borderLeftColor: colors.income, borderLeftWidth: 3 }]}>
-          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>Income</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t.analytics.income}</Text>
           <Text style={[styles.summaryValue, { color: colors.income }]}>
             {formatCurrency(monthlyIncome)}
           </Text>
         </Card>
         <Card style={[styles.summaryCard, { borderLeftColor: colors.expense, borderLeftWidth: 3 }]}>
-          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>Expenses</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t.analytics.expenses}</Text>
           <Text style={[styles.summaryValue, { color: colors.expense }]}>
             {formatCurrency(monthlyExpenses)}
           </Text>
@@ -145,7 +150,7 @@ export function AnalyticsScreen() {
       </View>
 
       <Card style={styles.netCard}>
-        <Text style={[styles.netLabel, { color: colors.textTertiary }]}>Net Income</Text>
+        <Text style={[styles.netLabel, { color: colors.textTertiary }]}>{t.analytics.netIncome}</Text>
         <Text style={[
           styles.netValue,
           { color: monthlyIncome - monthlyExpenses >= 0 ? colors.income : colors.expense },
@@ -156,7 +161,7 @@ export function AnalyticsScreen() {
 
       <Card style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Income vs Expenses (6 months)
+          {t.analytics.incomeVsExpenses}
         </Text>
         <View style={styles.chartContainer}>
           {monthlyTrend.map((item, idx) => {
@@ -174,7 +179,7 @@ export function AnalyticsScreen() {
                   <View
                     style={[
                       styles.bar,
-                      styles.incomeBar,
+                      { backgroundColor: colors.income },
                       {
                         height: Math.max(incomeHeight, 4),
                         opacity: isSelected || selectedTrendMonth === -1 ? 1 : 0.4,
@@ -184,7 +189,7 @@ export function AnalyticsScreen() {
                   <View
                     style={[
                       styles.bar,
-                      styles.expenseBar,
+                      { backgroundColor: colors.expense },
                       {
                         height: Math.max(expenseHeight, 4),
                         opacity: isSelected || selectedTrendMonth === -1 ? 1 : 0.4,
@@ -218,13 +223,13 @@ export function AnalyticsScreen() {
             <View style={styles.tooltipRow}>
               <View style={[styles.tooltipDot, { backgroundColor: colors.income }]} />
               <Text style={[styles.tooltipText, { color: colors.textSecondary }]}>
-                Income: {formatCurrency(monthlyTrend[selectedTrendMonth].income)}
+                {t.analytics.income}: {formatCurrency(monthlyTrend[selectedTrendMonth].income)}
               </Text>
             </View>
             <View style={styles.tooltipRow}>
               <View style={[styles.tooltipDot, { backgroundColor: colors.expense }]} />
               <Text style={[styles.tooltipText, { color: colors.textSecondary }]}>
-                Expenses: {formatCurrency(monthlyTrend[selectedTrendMonth].expense)}
+                {t.analytics.expenses}: {formatCurrency(monthlyTrend[selectedTrendMonth].expense)}
               </Text>
             </View>
           </View>
@@ -232,7 +237,7 @@ export function AnalyticsScreen() {
       </Card>
 
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Spending by Category
+        {t.analytics.spendingByCategory}
       </Text>
 
       {categoryBreakdown.map((item) => (
@@ -263,7 +268,7 @@ export function AnalyticsScreen() {
             />
           </View>
           <Text style={[styles.categoryPercentage, { color: colors.textSecondary }]}>
-            {formatPercentage(item.percentage)} of expenses
+            {formatPercentage(item.percentage)} {t.analytics.ofExpenses}
           </Text>
         </View>
       ))}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Input, Button } from '../../../shared/components';
 import { isBiometricEnabled } from '../../../core/encryption';
@@ -17,6 +18,7 @@ export function EnterPinScreen({
   onLockout,
 }: EnterPinScreenProps) {
   const { colors } = useTheme();
+  const { t, translate } = useLanguage();
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +40,7 @@ export function EnterPinScreen({
     setError(null);
 
     if (!pin) {
-      setError('Please enter your PIN');
+      setError(t.auth.pinRequired);
       return;
     }
 
@@ -53,11 +55,11 @@ export function EnterPinScreen({
         if (newAttempts >= MAX_ATTEMPTS) {
           onLockout?.();
         } else {
-          setError(`Invalid PIN. ${MAX_ATTEMPTS - newAttempts} attempts remaining`);
+          setError(translate('auth.attemptsRemaining', { count: MAX_ATTEMPTS - newAttempts }));
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : t.app.error);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +70,7 @@ export function EnterPinScreen({
       setIsBiometricLoading(true);
       await onBiometricLogin();
     } catch {
-      setError('Biometric authentication failed');
+      setError(t.auth.biometricAuthFailed);
     } finally {
       setIsBiometricLoading(false);
     }
@@ -78,14 +80,14 @@ export function EnterPinScreen({
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Enter PIN
+          {t.auth.enterPin}
         </Text>
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Enter your security PIN to access the app
+          {t.auth.enterPinDescription}
         </Text>
 
         <Input
-          label="PIN"
+          label={t.auth.enterPin}
           value={pin}
           onChangeText={setPin}
           keyboardType="number-pad"
@@ -96,7 +98,7 @@ export function EnterPinScreen({
         />
 
         <Button
-          title="Unlock"
+          title={t.auth.unlock}
           onPress={handleSubmit}
           loading={isLoading}
           disabled={!pin}
@@ -106,7 +108,7 @@ export function EnterPinScreen({
 
         {biometricEnabled && (
           <Button
-            title="Use Fingerprint / Face ID"
+            title={t.auth.biometricLogin}
             onPress={handleBiometric}
             loading={isBiometricLoading}
             variant="outline"

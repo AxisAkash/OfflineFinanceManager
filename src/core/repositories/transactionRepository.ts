@@ -12,6 +12,8 @@ interface TransactionRow {
   date: string;
   is_recurring: number;
   recurring_id: string | null;
+  notes: string | null;
+  time: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +29,8 @@ function rowToTransaction(row: TransactionRow): Transaction {
     date: row.date,
     isRecurring: row.is_recurring === 1,
     recurringId: row.recurring_id || undefined,
+    notes: row.notes || undefined,
+    time: row.time || undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -138,6 +142,8 @@ export class TransactionRepository extends BaseRepository {
         date: transaction.date,
         is_recurring: transaction.isRecurring ? 1 : 0,
         recurring_id: transaction.recurringId || null,
+        notes: transaction.notes || null,
+        time: transaction.time || null,
         created_at: transaction.createdAt,
         updated_at: transaction.updatedAt,
       };
@@ -148,6 +154,19 @@ export class TransactionRepository extends BaseRepository {
         'UPDATE wallets SET balance = balance + (?), updated_at = ? WHERE id = ?',
         [sign * transaction.amount, transaction.createdAt, transaction.walletId]
       );
+
+      if (transaction.type === 'expense') {
+        const activeBudget = await this.executeSqlSingle<{ id: string; spent: number }>(
+          `SELECT id, spent FROM budgets WHERE category_id = ? AND end_date >= ? LIMIT 1`,
+          [transaction.categoryId, transaction.date]
+        );
+        if (activeBudget) {
+          await db.runAsync(
+            'UPDATE budgets SET spent = spent + ?, updated_at = ? WHERE id = ?',
+            [transaction.amount, transaction.createdAt, activeBudget.id]
+          );
+        }
+      }
 
       await db.runAsync('COMMIT');
     } catch (err) {
@@ -166,6 +185,8 @@ export class TransactionRepository extends BaseRepository {
     if (updates.date !== undefined) rowUpdates.date = updates.date;
     if (updates.isRecurring !== undefined) rowUpdates.is_recurring = updates.isRecurring ? 1 : 0;
     if (updates.recurringId !== undefined) rowUpdates.recurring_id = updates.recurringId || null;
+    if (updates.notes !== undefined) rowUpdates.notes = updates.notes || null;
+    if (updates.time !== undefined) rowUpdates.time = updates.time || null;
     rowUpdates.updated_at = new Date().toISOString();
 
     await this.update(id, rowUpdates);
@@ -210,6 +231,13 @@ export class TransactionRepository extends BaseRepository {
         'UPDATE wallets SET balance = balance + (?), updated_at = ? WHERE id = ?',
         [sign * txn.amount, new Date().toISOString(), txn.walletId]
       );
+
+      if (txn.type === 'expense') {
+        await db.runAsync(
+          'UPDATE budgets SET spent = MAX(0, spent - ?), updated_at = ? WHERE category_id = ? AND end_date >= ?',
+          [txn.amount, new Date().toISOString(), txn.categoryId, txn.date]
+        );
+      }
 
       await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
       await db.runAsync('COMMIT');

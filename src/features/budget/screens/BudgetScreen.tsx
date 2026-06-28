@@ -8,12 +8,13 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
 import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
 import { budgetRepository } from '../../../core/repositories/budgetRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
-import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { Budget, Category } from '../../../shared/types';
 import { formatCurrency, formatPercentage, generateId } from '../../../shared/utils';
 
@@ -22,8 +23,9 @@ interface BudgetScreenProps {
   isCreating?: boolean;
 }
 
-export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) {
+export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: BudgetScreenProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Record<string, Category>>({});
   const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
@@ -34,12 +36,20 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
   const [showCreate, setShowCreate] = useState(false);
   const [newCategoryId, setNewCategoryId] = useState('');
   const [newAmount, setNewAmount] = useState('');
-  const [newPeriod, setNewPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [newPeriod, setNewPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const [isSaving, setIsSaving] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isCreating) {
+      setShowCreate(true);
+    }
+  }, [isCreating]);
 
   const loadData = useCallback(async () => {
     try {
@@ -66,7 +76,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
   const handleCreateBudget = useCallback(async () => {
     const amountNum = parseFloat(newAmount);
     if (!newCategoryId || !amountNum || amountNum <= 0) {
-      Alert.alert('Error', 'Please select a category and enter a valid amount');
+      Alert.alert(t.common.error, t.budget.selectCategory);
       return;
     }
 
@@ -77,6 +87,8 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
       let endDate: Date;
       if (newPeriod === 'yearly') {
         endDate = new Date(now.getFullYear() + 1, now.getMonth(), 0);
+      } else if (newPeriod === 'weekly') {
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
       } else {
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       }
@@ -98,34 +110,34 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
       setNewCategoryId('');
       setNewAmount('');
       await loadData();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to create budget');
+    } catch {
+      Alert.alert(t.common.error, t.budget.createFailed);
     } finally {
       setIsSaving(false);
     }
-  }, [newCategoryId, newAmount, newPeriod, loadData]);
+  }, [newCategoryId, newAmount, newPeriod, loadData, t]);
 
   const handleDeleteBudget = useCallback((budget: Budget) => {
     Alert.alert(
-      'Delete Budget',
-      `Are you sure you want to delete this budget?`,
+      t.budget.delete,
+      t.budget.deleteConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Delete',
+          text: t.common.delete,
           style: 'destructive',
           onPress: async () => {
             try {
               await budgetRepository.delete(budget.id);
               await loadData();
             } catch {
-              Alert.alert('Error', 'Failed to delete budget');
+              Alert.alert(t.common.error, t.budget.deleteFailed);
             }
           },
         },
       ]
     );
-  }, [loadData]);
+  }, [loadData, t]);
 
   if (isLoading) {
     return <LoadingScreen type="list" />;
@@ -140,9 +152,9 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           icon={'\uD83D\uDCCA'}
-          title="No budgets"
-          description="Create budgets to track your spending and stay on track"
-          actionLabel="Create Budget"
+          title={t.budget.noBudgets}
+          description={t.budget.noBudgetsDescription}
+          actionLabel={t.budget.createFirst}
           onAction={() => setShowCreate(true)}
         />
       </View>
@@ -153,9 +165,9 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>Create Budget</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t.budget.create}</Text>
 
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Category</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t.budget.category}</Text>
           <View style={styles.categoryGrid}>
             {expenseCategories.map((cat) => (
               <TouchableOpacity
@@ -178,15 +190,29 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
           </View>
 
           <Input
-            label="Budget Amount"
+            label={t.budget.amount}
             value={newAmount}
             onChangeText={setNewAmount}
             keyboardType="decimal-pad"
             placeholder="0.00"
           />
 
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Period</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t.budget.period}</Text>
           <View style={styles.optionsRow}>
+            <TouchableOpacity
+              style={[
+                styles.optionChip,
+                {
+                  backgroundColor: newPeriod === 'weekly' ? colors.primary : colors.surfaceVariant,
+                  borderColor: newPeriod === 'weekly' ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => setNewPeriod('weekly')}
+            >
+              <Text style={{ color: newPeriod === 'weekly' ? colors.textOnPrimary : colors.text }}>
+                {t.budget.weekly}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.optionChip,
@@ -198,7 +224,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
               onPress={() => setNewPeriod('monthly')}
             >
               <Text style={{ color: newPeriod === 'monthly' ? colors.textOnPrimary : colors.text }}>
-                Monthly
+                {t.budget.monthly}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -212,14 +238,14 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
               onPress={() => setNewPeriod('yearly')}
             >
               <Text style={{ color: newPeriod === 'yearly' ? colors.textOnPrimary : colors.text }}>
-                Yearly
+                {t.budget.yearly}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.createActions}>
             <Button
-              title="Create Budget"
+              title={t.budget.create}
               onPress={handleCreateBudget}
               loading={isSaving}
               disabled={!newCategoryId || !newAmount}
@@ -228,7 +254,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
             />
             <View style={styles.spacer} />
             <Button
-              title="Cancel"
+              title={t.common.cancel}
               onPress={() => setShowCreate(false)}
               variant="ghost"
               fullWidth
@@ -239,7 +265,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
         <>
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>
-              Budgets
+              {t.budget.title}
             </Text>
             <TouchableOpacity onPress={() => setShowCreate(true)}>
               <Text style={[styles.addButton, { color: colors.primary }]}>
@@ -251,7 +277,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
           {overview.totalBudget > 0 && (
             <Card style={styles.overviewCard}>
               <Text style={[styles.overviewLabel, { color: colors.textSecondary }]}>
-                Monthly Budget Overview
+                {t.budget.overview}
               </Text>
               <View style={styles.overviewRow}>
                 <View style={styles.overviewItem}>
@@ -259,7 +285,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
                     {formatCurrency(overview.totalBudget)}
                   </Text>
                   <Text style={[styles.overviewSub, { color: colors.textSecondary }]}>
-                    Budget
+                    {t.budget.budget}
                   </Text>
                 </View>
                 <View style={styles.overviewItem}>
@@ -267,7 +293,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
                     {formatCurrency(overview.totalSpent)}
                   </Text>
                   <Text style={[styles.overviewSub, { color: colors.textSecondary }]}>
-                    Spent
+                    {t.budget.spent}
                   </Text>
                 </View>
                 <View style={styles.overviewItem}>
@@ -275,7 +301,7 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
                     {formatCurrency(overview.remaining)}
                   </Text>
                   <Text style={[styles.overviewSub, { color: colors.textSecondary }]}>
-                    Remaining
+                    {t.budget.remaining}
                   </Text>
                 </View>
               </View>
@@ -321,10 +347,10 @@ export function BudgetScreen({ onCreateBudget, isCreating }: BudgetScreenProps) 
                     </View>
                     <View style={styles.budgetDetails}>
                       <Text style={[styles.budgetSpent, { color: colors.textSecondary }]}>
-                        {formatCurrency(item.spent)} spent
+                        {formatCurrency(item.spent)} {t.budget.spent}
                       </Text>
                       <Text style={[styles.budgetLimit, { color: colors.textSecondary }]}>
-                        of {formatCurrency(item.amount)}
+                        {t.budget.of} {formatCurrency(item.amount)}
                       </Text>
                     </View>
                   </Card>

@@ -208,6 +208,25 @@ const MIGRATIONS: Migration[] = [
       }
     },
   },
+  {
+    version: 3,
+    name: 'migration_003_add_notes_time_to_transactions',
+    description: 'Add notes and time columns to transactions table',
+    up: async (db: SQLiteDatabase) => {
+      const cols = await db.getAllAsync<{ name: string }>(
+        `SELECT name FROM pragma_table_info('transactions') WHERE name = 'notes'`
+      );
+      if (cols.length === 0) {
+        await db.execAsync(`ALTER TABLE transactions ADD COLUMN notes TEXT DEFAULT '';`);
+      }
+      const timeCols = await db.getAllAsync<{ name: string }>(
+        `SELECT name FROM pragma_table_info('transactions') WHERE name = 'time'`
+      );
+      if (timeCols.length === 0) {
+        await db.execAsync(`ALTER TABLE transactions ADD COLUMN time TEXT DEFAULT '';`);
+      }
+    },
+  },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

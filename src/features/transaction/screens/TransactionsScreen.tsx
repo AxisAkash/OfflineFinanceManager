@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
+import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { EmptyState, LoadingScreen, ErrorMessage, FAB } from '../../../shared/components';
 import { TransactionItem } from '../components/TransactionItem';
@@ -15,6 +16,8 @@ interface TransactionsScreenProps {
 
 export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps) {
   const { colors } = useTheme();
+  const { t, translate } = useLanguage();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const {
     transactions,
@@ -24,9 +27,12 @@ export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps
   } = useTransactions();
   const [categories, setCategories] = useState<Record<string, Category>>({});
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+      loadCategories();
+    }, [refresh])
+  );
 
   const loadCategories = useCallback(async () => {
     const all = await categoryRepository.findAllMapped();
@@ -68,9 +74,9 @@ export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           icon={'\uD83D\uDCB3'}
-          title="No transactions"
-          description="Start tracking your finances by adding your first transaction"
-          actionLabel="Create Transaction"
+          title={t.transaction.noTransactions}
+          description={t.transaction.noTransactionsDescription}
+          actionLabel={t.transaction.create}
           onAction={handleAddTransaction}
         />
         <FAB onPress={handleAddTransaction} />
@@ -82,10 +88,10 @@ export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          Transactions
+          {t.transaction.title}
         </Text>
         <Text style={[styles.count, { color: colors.textSecondary }]}>
-          {transactions.length} total
+          {translate('transaction.total', { count: transactions.length })}
         </Text>
       </View>
       <FlatList

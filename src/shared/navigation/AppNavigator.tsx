@@ -65,6 +65,7 @@ const tabStyles = StyleSheet.create({
   },
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MainTabs({ navigation }: { navigation: any }) {
   const { colors } = useTheme();
 
@@ -247,7 +248,12 @@ export function AppNavigator() {
               options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
             >
               {({ route, navigation }) => {
-                const { transactionId } = route.params as { transactionId: string };
+                const params = route.params as { transactionId: string } | undefined;
+                const transactionId = params?.transactionId;
+                if (!transactionId) {
+                  navigation.goBack();
+                  return null;
+                }
                 return (
                   <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
                     <ModalHeader title="Edit Transaction" onClose={() => navigation.goBack()} />
@@ -265,7 +271,12 @@ export function AppNavigator() {
               options={{ presentation: 'card', animation: 'slide_from_right' }}
             >
               {({ route, navigation }) => {
-                const { transactionId } = route.params as { transactionId: string };
+                const params = route.params as { transactionId: string } | undefined;
+                const transactionId = params?.transactionId;
+                if (!transactionId) {
+                  navigation.goBack();
+                  return null;
+                }
                 return (
                   <TransactionDetailScreen
                     transactionId={transactionId}
@@ -337,7 +348,7 @@ export function AppNavigator() {
               name="CreateBudget"
               options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
             >
-              {({ route, navigation }) => (
+              {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
                   <ModalHeader title="Create Budget" onClose={() => navigation.goBack()} />
                   <BudgetScreen onCreateBudget={() => navigation.goBack()} isCreating />
