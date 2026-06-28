@@ -10,15 +10,19 @@ interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondaryAction?: () => void;
   style?: ViewStyle;
 }
 
 export function EmptyState({
-  icon = 'inbox',
+  icon = '\uD83D\uDCE5',
   title,
   description,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondaryAction,
   style,
 }: EmptyStateProps) {
   const { colors } = useTheme();
@@ -37,8 +41,17 @@ export function EmptyState({
           title={actionLabel}
           onPress={onAction}
           variant="primary"
-          size="md"
+          size="lg"
           style={styles.action}
+        />
+      )}
+      {secondaryLabel && onSecondaryAction && (
+        <Button
+          title={secondaryLabel}
+          onPress={onSecondaryAction}
+          variant="ghost"
+          size="md"
+          style={styles.secondaryAction}
         />
       )}
     </View>
@@ -67,6 +80,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   action: {
+    minWidth: 200,
+  },
+  secondaryAction: {
     minWidth: 160,
+    marginTop: spacing.sm,
   },
 });
