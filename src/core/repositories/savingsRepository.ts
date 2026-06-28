@@ -46,6 +46,19 @@ export class SavingsRepository extends BaseRepository {
     return rows.map(rowToGoal);
   }
 
+  async updateGoal(id: string, updates: Partial<SavingsGoal>): Promise<void> {
+    const rowUpdates: Partial<SavingsGoalRow> = {};
+    if (updates.name !== undefined) rowUpdates.name = updates.name;
+    if (updates.targetAmount !== undefined) rowUpdates.target_amount = updates.targetAmount;
+    if (updates.currentAmount !== undefined) rowUpdates.current_amount = updates.currentAmount;
+    if (updates.deadline !== undefined) rowUpdates.deadline = updates.deadline;
+    if (updates.icon !== undefined) rowUpdates.icon = updates.icon;
+    if (updates.color !== undefined) rowUpdates.color = updates.color;
+    if (updates.isCompleted !== undefined) rowUpdates.is_completed = updates.isCompleted ? 1 : 0;
+    rowUpdates.updated_at = new Date().toISOString();
+    await this.update(id, rowUpdates);
+  }
+
   async create(goal: SavingsGoal): Promise<void> {
     const row: SavingsGoalRow = {
       id: goal.id,

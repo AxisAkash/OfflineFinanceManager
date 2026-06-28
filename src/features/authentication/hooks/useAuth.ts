@@ -8,7 +8,7 @@ import {
   getBiometricInfo,
   BiometricInfo,
 } from '../services/authService';
-import { isPinSetup, isBiometricEnabled, changePin } from '../../../core/encryption';
+import { isPinSetup, isBiometricEnabled, changePin, getLockoutState, incrementLockoutAttempts, resetLockout, LockoutState } from '../../../core/encryption';
 
 interface AuthState {
   isLoading: boolean;
@@ -17,6 +17,7 @@ interface AuthState {
   hasPin: boolean;
   biometricInfo: BiometricInfo | null;
   error: string | null;
+  lockout: LockoutState;
 }
 
 interface AuthActions {
@@ -38,6 +39,7 @@ export function useAuth(): AuthState & AuthActions {
     hasPin: false,
     biometricInfo: null,
     error: null,
+    lockout: { attempts: 0, lockedUntil: null, isLocked: false, remainingSeconds: 0 },
   });
 
   const appState = useRef(AppState.currentState);
@@ -90,15 +92,17 @@ export function useAuth(): AuthState & AuthActions {
   const checkState = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
-      const [hasPin, biometricInfo] = await Promise.all([
+      const [hasPin, biometricInfo, lockout] = await Promise.all([
         isPinSetup(),
         getBiometricInfo(),
+        getLockoutState(),
       ]);
 
       setState((prev) => ({
         ...prev,
         hasPin,
         biometricInfo,
+        lockout,
         isLoading: false,
       }));
     } catch (err) {
@@ -111,17 +115,31 @@ export function useAuth(): AuthState & AuthActions {
   }, []);
 
   const loginWithPin = useCallback(async (pin: string): Promise<boolean> => {
+    const lockoutState = await getLockoutState();
+    if (lockoutState.isLocked) {
+      setState((prev) => ({ ...prev, lockout: lockoutState, error: 'Too many attempts' }));
+      return false;
+    }
+
     const result = await performAuth(pin);
     if (result.success) {
+      await resetLockout();
       setState((prev) => ({
         ...prev,
         isAuthenticated: true,
         isLocked: false,
         error: null,
+        lockout: { attempts: 0, lockedUntil: null, isLocked: false, remainingSeconds: 0 },
       }));
       return true;
     }
-    setState((prev) => ({ ...prev, error: result.error || 'Invalid PIN' }));
+
+    const newLockout = await incrementLockoutAttempts();
+    setState((prev) => ({
+      ...prev,
+      error: newLockout.isLocked ? 'Too many attempts' : (result.error || 'Invalid PIN'),
+      lockout: newLockout,
+    }));
     return false;
   }, []);
 
@@ -189,6 +207,7 @@ export function useAuth(): AuthState & AuthActions {
       hasPin: false,
       biometricInfo: null,
       error: null,
+      lockout: { attempts: 0, lockedUntil: null, isLocked: false, remainingSeconds: 0 },
     });
   }, []);
 
@@ -199,6 +218,7 @@ export function useAuth(): AuthState & AuthActions {
 
   return {
     ...state,
+    lockout: state.lockout,
     loginWithPin,
     loginWithBiometrics,
     createPin,

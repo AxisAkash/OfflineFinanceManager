@@ -22,7 +22,7 @@ function AppContent() {
       await initializeDatabase();
       setIsReady(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to initialize';
+      const message = err instanceof Error ? err.message : t.app.error;
       setError(message);
     }
   }
@@ -41,7 +41,7 @@ function AppContent() {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={[styles.loadingText, { color: colors.primary }]}>
-          Offline Finance
+          {t.app.name}
         </Text>
       </View>
     );

@@ -69,6 +69,18 @@ export class BudgetRepository extends BaseRepository {
     await this.insert(row);
   }
 
+  async updateBudget(id: string, updates: Partial<Budget>): Promise<void> {
+    const rowUpdates: Partial<BudgetRow> = {};
+    if (updates.categoryId !== undefined) rowUpdates.category_id = updates.categoryId;
+    if (updates.amount !== undefined) rowUpdates.amount = updates.amount;
+    if (updates.spent !== undefined) rowUpdates.spent = updates.spent;
+    if (updates.period !== undefined) rowUpdates.period = updates.period;
+    if (updates.startDate !== undefined) rowUpdates.start_date = updates.startDate;
+    if (updates.endDate !== undefined) rowUpdates.end_date = updates.endDate;
+    rowUpdates.updated_at = new Date().toISOString();
+    await this.update(id, rowUpdates);
+  }
+
   async updateSpent(id: string, spent: number): Promise<void> {
     await this.update(id, {
       spent,

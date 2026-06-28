@@ -1,35 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Input, Button } from '../../../shared/components';
-import { isBiometricEnabled } from '../../../core/encryption';
+import { isBiometricEnabled, getLockoutState, LockoutState } from '../../../core/encryption';
 
 interface EnterPinScreenProps {
   onPinSubmit: (pin: string) => Promise<boolean>;
   onBiometricLogin: () => Promise<boolean>;
-  onLockout?: () => void;
 }
 
 export function EnterPinScreen({
   onPinSubmit,
   onBiometricLogin,
-  onLockout,
 }: EnterPinScreenProps) {
   const { colors } = useTheme();
   const { t, translate } = useLanguage();
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [attempts, setAttempts] = useState(0);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-  const MAX_ATTEMPTS = 5;
+  const [lockout, setLockout] = useState<LockoutState>({ attempts: 0, lockedUntil: null, isLocked: false, remainingSeconds: 0 });
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     checkBiometricStatus();
+    checkLockout();
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
   }, []);
+
+  useEffect(() => {
+    if (lockout.isLocked && lockout.remainingSeconds > 0) {
+      countdownRef.current = setInterval(() => {
+        setLockout((prev) => {
+          const newSecs = prev.remainingSeconds - 1;
+          if (newSecs <= 0) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            checkLockout();
+            return { ...prev, isLocked: false, remainingSeconds: 0, attempts: 0 };
+          }
+          return { ...prev, remainingSeconds: newSecs };
+        });
+      }, 1000);
+    }
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [lockout.isLocked]);
+
+  const checkLockout = async () => {
+    const state = await getLockoutState();
+    setLockout(state);
+  };
 
   const checkBiometricStatus = async () => {
     const enabled = await isBiometricEnabled();
@@ -49,13 +75,12 @@ export function EnterPinScreen({
       const success = await onPinSubmit(pin);
 
       if (!success) {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
-
-        if (newAttempts >= MAX_ATTEMPTS) {
-          onLockout?.();
+        const state = await getLockoutState();
+        setLockout(state);
+        if (state.isLocked) {
+          setError(t.auth.tooManyAttempts);
         } else {
-          setError(translate('auth.attemptsRemaining', { count: MAX_ATTEMPTS - newAttempts }));
+          setError(translate('auth.attemptsRemaining', { count: Math.max(0, 5 - state.attempts) }));
         }
       }
     } catch (err) {
@@ -86,25 +111,38 @@ export function EnterPinScreen({
           {t.auth.enterPinDescription}
         </Text>
 
-        <Input
-          label={t.auth.enterPin}
-          value={pin}
-          onChangeText={setPin}
-          keyboardType="number-pad"
-          secureTextEntry
-          maxLength={6}
-          error={error || undefined}
-          containerStyle={styles.input}
-        />
+        {lockout.isLocked ? (
+          <View style={styles.lockoutContainer}>
+            <Text style={[styles.lockoutText, { color: colors.error }]}>
+              {t.auth.tooManyAttempts}
+            </Text>
+            <Text style={[styles.lockoutTimer, { color: colors.textSecondary }]}>
+              {translate('auth.lockoutTimer', { seconds: lockout.remainingSeconds })}
+            </Text>
+          </View>
+        ) : (
+          <>
+            <Input
+              label={t.auth.enterPin}
+              value={pin}
+              onChangeText={setPin}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              error={error || undefined}
+              containerStyle={styles.input}
+            />
 
-        <Button
-          title={t.auth.unlock}
-          onPress={handleSubmit}
-          loading={isLoading}
-          disabled={!pin}
-          fullWidth
-          size="lg"
-        />
+            <Button
+              title={t.auth.unlock}
+              onPress={handleSubmit}
+              loading={isLoading}
+              disabled={!pin}
+              fullWidth
+              size="lg"
+            />
+          </>
+        )}
 
         {biometricEnabled && (
           <Button
@@ -141,5 +179,20 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: spacing.lg,
+  },
+  lockoutContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    padding: spacing.xl,
+  },
+  lockoutText: {
+    ...typography.body,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  lockoutTimer: {
+    ...typography.h3,
+    fontWeight: '700',
   },
 });

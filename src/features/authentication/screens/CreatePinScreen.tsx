@@ -33,7 +33,7 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
   const handleSubmit = async () => {
     setError(null);
 
-    const validation = validatePin(pin);
+    const validation = validatePin(pin, t);
     if (!validation.isValid) {
       setError(validation.error || t.auth.invalidPin);
       return;

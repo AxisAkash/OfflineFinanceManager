@@ -111,6 +111,25 @@ export class TransactionRepository extends BaseRepository {
     return this.getDateRangeTotals(startDate, endDate);
   }
 
+  async getMonthlyTotals(year: number): Promise<{ month: number; income: number; expense: number }[]> {
+    const db = await this.dbPromise;
+    const rows = await db.getAllAsync<{ month: number; type: string; total: number }>(
+      `SELECT CAST(strftime('%m', date) AS INTEGER) as month, type, SUM(amount) as total FROM transactions
+       WHERE date >= ? AND date <= ?
+       GROUP BY month, type ORDER BY month`,
+      [`${year}-01-01`, `${year}-12-31`]
+    );
+    const monthly: { month: number; income: number; expense: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      monthly.push({
+        month: m,
+        income: rows.find(r => r.month === m && r.type === 'income')?.total || 0,
+        expense: rows.find(r => r.month === m && r.type === 'expense')?.total || 0,
+      });
+    }
+    return monthly;
+  }
+
   async getDateRangeTotals(startDate: string, endDate: string): Promise<{ income: number; expense: number }> {
     const db = await this.dbPromise;
     const incomeResult = await db.getFirstAsync<{ total: number }>(

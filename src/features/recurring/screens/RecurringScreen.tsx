@@ -48,7 +48,7 @@ export function RecurringScreen() {
       setWallets(activeWallets);
       if (activeWallets.length > 0) setWalletId(activeWallets[0].id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load recurring transactions');
+      setError(err instanceof Error ? err.message : t.recurring.loadFailed);
     } finally {
       setIsLoading(false);
     }

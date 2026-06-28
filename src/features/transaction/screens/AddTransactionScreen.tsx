@@ -64,7 +64,7 @@ export function AddTransactionScreen({
       const all = await categoryRepository.findAllMapped();
       setCategories(all);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load categories');
+      setError(err instanceof Error ? err.message : t.app.error);
     }
   };
 
@@ -90,7 +90,7 @@ export function AddTransactionScreen({
         setSelectedWalletId(defaultWallet.id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load wallets');
+      setError(err instanceof Error ? err.message : t.app.error);
     }
   };
 
@@ -110,7 +110,7 @@ export function AddTransactionScreen({
         setIsRecurring(txn.isRecurring);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transaction');
+      setError(err instanceof Error ? err.message : t.app.error);
     }
   };
 
@@ -120,19 +120,19 @@ export function AddTransactionScreen({
     setError(null);
 
     const amountNum = parseFloat(amount);
-    const validation = validateAmount(amountNum);
+    const validation = validateAmount(amountNum, t);
     if (!validation.isValid) {
-      setError(validation.error || 'Invalid amount');
+      setError(validation.error || t.transaction.invalidAmount);
       return;
     }
 
     if (!categoryId) {
-      setError('Please select a category');
+      setError(t.transaction.selectCategory);
       return;
     }
 
     if (!selectedWalletId) {
-      setError('Please select a wallet');
+      setError(t.transaction.selectWallet);
       return;
     }
 
@@ -158,7 +158,7 @@ export function AddTransactionScreen({
     if (success) {
       onSuccess?.();
     } else {
-      setError(`Failed to ${isEditing ? 'update' : 'save'} transaction. Please try again.`);
+      setError(isEditing ? t.transaction.updateFailed : t.transaction.saveFailed);
     }
   };
 

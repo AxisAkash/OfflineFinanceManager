@@ -45,7 +45,7 @@ export function TransactionDetailScreen({
       setError(null);
       const txn = await transactionRepository.findByIdTransformed(transactionId);
       if (!txn) {
-        setError('Transaction not found');
+        setError(t.transaction.notFound);
         return;
       }
       setTransaction(txn);
@@ -59,11 +59,11 @@ export function TransactionDetailScreen({
       if (foundCat) setCategory(foundCat);
       if (foundWal) setWallet(foundWal);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transaction');
+      setError(err instanceof Error ? err.message : t.app.error);
     } finally {
       setIsLoading(false);
     }
-  }, [transactionId]);
+  }, [transactionId, t]);
 
   const handleDelete = useCallback(() => {
     Alert.alert(

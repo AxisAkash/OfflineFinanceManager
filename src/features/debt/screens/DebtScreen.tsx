@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar } from '../../../shared/components';
 import { debtRepository } from '../../../core/repositories/debtRepository';
 import { Debt } from '../../../shared/types';
 import { formatCurrency, formatDate, formatPercentage, generateId } from '../../../shared/utils';
@@ -22,6 +22,11 @@ export function DebtScreen() {
   const [dueDate, setDueDate] = useState('');
   const [lender, setLender] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [payingDebt, setPayingDebt] = useState<Debt | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [isPaying, setIsPaying] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'success' });
 
   useEffect(() => {
     loadDebts();
@@ -34,13 +39,13 @@ export function DebtScreen() {
       const data = await debtRepository.findAllActive();
       setDebts(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load debts');
+      setError(err instanceof Error ? err.message : t.debt.loadFailed);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     const amountNum = parseFloat(totalAmount);
     if (!name.trim() || !amountNum || amountNum <= 0 || !dueDate.trim()) {
       Alert.alert(t.common.error, t.debt.allFieldsRequired);
@@ -48,22 +53,34 @@ export function DebtScreen() {
     }
     setIsSaving(true);
     try {
-      const now = new Date().toISOString();
-      const debt: Debt = {
-        id: generateId(),
-        name: name.trim(),
-        totalAmount: amountNum,
-        remainingAmount: amountNum,
-        interestRate: parseFloat(interestRate) || 0,
-        minimumPayment: parseFloat(minimumPayment) || 0,
-        dueDate,
-        lender: lender.trim(),
-        isPaid: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await debtRepository.create(debt);
+      if (editingDebt) {
+        await debtRepository.updateDebt(editingDebt.id, {
+          name: name.trim(),
+          totalAmount: amountNum,
+          interestRate: parseFloat(interestRate) || 0,
+          minimumPayment: parseFloat(minimumPayment) || 0,
+          dueDate,
+          lender: lender.trim(),
+        });
+      } else {
+        const now = new Date().toISOString();
+        const debt: Debt = {
+          id: generateId(),
+          name: name.trim(),
+          totalAmount: amountNum,
+          remainingAmount: amountNum,
+          interestRate: parseFloat(interestRate) || 0,
+          minimumPayment: parseFloat(minimumPayment) || 0,
+          dueDate,
+          lender: lender.trim(),
+          isPaid: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await debtRepository.create(debt);
+      }
       setShowCreate(false);
+      setEditingDebt(null);
       setName('');
       setTotalAmount('');
       setInterestRate('');
@@ -75,6 +92,30 @@ export function DebtScreen() {
       Alert.alert(t.common.error, t.debt.createFailed);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleMakePayment = async () => {
+    const amountNum = parseFloat(paymentAmount);
+    if (!payingDebt || !amountNum || amountNum <= 0) {
+      Alert.alert(t.common.error, t.debt.enterPayment);
+      return;
+    }
+    if (amountNum > payingDebt.remainingAmount) {
+      Alert.alert(t.common.error, t.debt.paymentExceeds);
+      return;
+    }
+    setIsPaying(true);
+    try {
+      await debtRepository.makePayment(payingDebt.id, amountNum);
+      setPayingDebt(null);
+      setPaymentAmount('');
+      await loadDebts();
+      setSnackbar({ visible: true, message: t.debt.paymentMade, type: 'success' });
+    } catch {
+      Alert.alert(t.common.error, t.debt.paymentFailed);
+    } finally {
+      setIsPaying(false);
     }
   };
 
@@ -91,6 +132,7 @@ export function DebtScreen() {
             try {
               await debtRepository.delete(debt.id);
               await loadDebts();
+              setSnackbar({ visible: true, message: t.common.deletedToast, type: 'success' });
             } catch {
               Alert.alert(t.common.error, t.debt.deleteFailed);
             }
@@ -129,7 +171,7 @@ export function DebtScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.debt.add}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{editingDebt ? t.debt.edit : t.debt.add}</Text>
           <Input label={t.debt.name} value={name} onChangeText={setName} placeholder={t.debt.namePlaceholder} />
           <Input label={t.debt.totalAmount} value={totalAmount} onChangeText={setTotalAmount} keyboardType="decimal-pad" placeholder="0.00" />
           <Input label={t.debt.interestRate} value={interestRate} onChangeText={setInterestRate} keyboardType="decimal-pad" placeholder="0.00" />
@@ -137,9 +179,9 @@ export function DebtScreen() {
           <Input label={t.debt.dueDate} value={dueDate} onChangeText={setDueDate} placeholder="2025-12-31" />
           <Input label={t.debt.lender} value={lender} onChangeText={setLender} placeholder={t.debt.lenderPlaceholder} />
           <View style={styles.createActions}>
-            <Button title={t.debt.add} onPress={handleCreate} loading={isSaving} disabled={!name || !totalAmount || !dueDate} fullWidth size="lg" />
+            <Button title={editingDebt ? t.debt.edit : t.debt.add} onPress={handleSave} loading={isSaving} disabled={!name || !totalAmount || !dueDate} fullWidth size="lg" />
             <View style={styles.spacer} />
-            <Button title={t.common.cancel} onPress={() => setShowCreate(false)} variant="ghost" fullWidth />
+            <Button title={t.common.cancel} onPress={() => { setShowCreate(false); setEditingDebt(null); }} variant="ghost" fullWidth />
           </View>
         </ScrollView>
       ) : (
@@ -177,10 +219,21 @@ export function DebtScreen() {
                 : 0;
 
               return (
-                <TouchableOpacity activeOpacity={0.7} onLongPress={() => handleDelete(item)}>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setPayingDebt(item)} onLongPress={() => handleDelete(item)}>
                   <Card style={styles.debtCard}>
                     <View style={styles.debtHeader}>
-                      <Text style={[styles.debtName, { color: colors.text }]}>{item.name}</Text>
+                      <TouchableOpacity onPress={() => {
+                        setEditingDebt(item);
+                        setName(item.name);
+                        setTotalAmount(item.totalAmount.toString());
+                        setInterestRate(item.interestRate.toString());
+                        setMinimumPayment(item.minimumPayment.toString());
+                        setDueDate(item.dueDate);
+                        setLender(item.lender);
+                        setShowCreate(true);
+                      }}>
+                        <Text style={[styles.debtName, { color: colors.text }]}>{item.name}</Text>
+                      </TouchableOpacity>
                       {item.lender ? <Text style={[styles.debtLender, { color: colors.textSecondary }]}>{item.lender}</Text> : null}
                     </View>
                     <View style={styles.debtAmounts}>
@@ -213,6 +266,50 @@ export function DebtScreen() {
           />
         </>
       )}
+      <Modal visible={payingDebt !== null} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {translate('debt.makePayment', { name: payingDebt?.name ?? '' })}
+            </Text>
+            {payingDebt && (
+              <Text style={[styles.modalSubtext, { color: colors.textSecondary }]}>
+                {translate('debt.remaining', { amount: formatCurrency(payingDebt.remainingAmount) })}
+              </Text>
+            )}
+            <Input
+              label={t.debt.paymentAmount}
+              value={paymentAmount}
+              onChangeText={setPaymentAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+            />
+            <View style={styles.createActions}>
+              <Button
+                title={t.debt.pay}
+                onPress={handleMakePayment}
+                loading={isPaying}
+                disabled={!paymentAmount}
+                fullWidth
+                size="lg"
+              />
+              <View style={styles.spacer} />
+              <Button
+                title={t.common.cancel}
+                onPress={() => { setPayingDebt(null); setPaymentAmount(''); }}
+                variant="ghost"
+                fullWidth
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        onDismiss={() => setSnackbar(prev => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
@@ -251,4 +348,8 @@ const styles = StyleSheet.create({
   debtFooter: { flexDirection: 'row', justifyContent: 'space-between' },
   debtDue: { ...typography.caption },
   debtMinPayment: { ...typography.caption },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  modalContent: { width: '100%', borderRadius: 16, padding: spacing.xl },
+  modalTitle: { ...typography.h3, marginBottom: spacing.sm },
+  modalSubtext: { ...typography.caption, marginBottom: spacing.lg },
 });

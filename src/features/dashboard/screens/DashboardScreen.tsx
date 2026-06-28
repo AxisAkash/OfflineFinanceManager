@@ -92,11 +92,11 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
       allCategories.forEach((c) => { catMap[c.id] = c; });
       setCategories(catMap);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      setError(err instanceof Error ? err.message : t.dashboard.loadFailed);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   if (isLoading) {
     return (

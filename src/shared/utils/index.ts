@@ -8,6 +8,7 @@ export {
   generateId,
   isValidAmount,
   sanitizeInput,
+  getMonthName,
 } from './format';
 
 export {

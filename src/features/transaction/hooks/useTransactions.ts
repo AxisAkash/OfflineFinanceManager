@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { Transaction } from '../../../shared/types';
 import { generateId } from '../../../shared/utils';
@@ -31,10 +31,6 @@ export function useTransactions(): UseTransactionsResult {
       setIsLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
 
   const createTransaction = useCallback(async (
     transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>

@@ -65,6 +65,20 @@ export class DebtRepository extends BaseRepository {
     await this.insert(row);
   }
 
+  async updateDebt(id: string, updates: Partial<Debt>): Promise<void> {
+    const rowUpdates: Partial<DebtRow> = {};
+    if (updates.name !== undefined) rowUpdates.name = updates.name;
+    if (updates.totalAmount !== undefined) rowUpdates.total_amount = updates.totalAmount;
+    if (updates.remainingAmount !== undefined) rowUpdates.remaining_amount = updates.remainingAmount;
+    if (updates.interestRate !== undefined) rowUpdates.interest_rate = updates.interestRate;
+    if (updates.minimumPayment !== undefined) rowUpdates.minimum_payment = updates.minimumPayment;
+    if (updates.dueDate !== undefined) rowUpdates.due_date = updates.dueDate;
+    if (updates.lender !== undefined) rowUpdates.lender = updates.lender;
+    if (updates.isPaid !== undefined) rowUpdates.is_paid = updates.isPaid ? 1 : 0;
+    rowUpdates.updated_at = new Date().toISOString();
+    await this.update(id, rowUpdates);
+  }
+
   async makePayment(id: string, amount: number): Promise<void> {
     const debt = await this.executeSqlSingle<DebtRow>(
       'SELECT * FROM debts WHERE id = ?',

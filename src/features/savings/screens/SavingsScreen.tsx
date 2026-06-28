@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar } from '../../../shared/components';
 import { savingsRepository } from '../../../core/repositories/savingsRepository';
 import { SavingsGoal } from '../../../shared/types';
 import { formatCurrency, formatDate, generateId } from '../../../shared/utils';
@@ -15,10 +15,15 @@ export function SavingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [deadline, setDeadline] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [contributingGoal, setContributingGoal] = useState<SavingsGoal | null>(null);
+  const [contributionAmount, setContributionAmount] = useState('');
+  const [isContributing, setIsContributing] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info' }>({ visible: false, message: '', type: 'success' });
 
   useEffect(() => {
     loadGoals();
@@ -31,13 +36,13 @@ export function SavingsScreen() {
       const data = await savingsRepository.findAllActive();
       setGoals(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load savings goals');
+      setError(err instanceof Error ? err.message : t.savings.loadFailed);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     const amountNum = parseFloat(targetAmount);
     if (!name.trim() || !amountNum || amountNum <= 0 || !deadline.trim()) {
       Alert.alert(t.common.error, t.savings.allFieldsRequired);
@@ -45,21 +50,30 @@ export function SavingsScreen() {
     }
     setIsSaving(true);
     try {
-      const now = new Date().toISOString();
-      const goal: SavingsGoal = {
-        id: generateId(),
-        name: name.trim(),
-        targetAmount: amountNum,
-        currentAmount: 0,
-        deadline,
-        icon: '\uD83C\uDFAF',
-        color: '#FF9800',
-        isCompleted: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await savingsRepository.create(goal);
+      if (editingGoal) {
+        await savingsRepository.updateGoal(editingGoal.id, {
+          name: name.trim(),
+          targetAmount: amountNum,
+          deadline,
+        });
+      } else {
+        const now = new Date().toISOString();
+        const goal: SavingsGoal = {
+          id: generateId(),
+          name: name.trim(),
+          targetAmount: amountNum,
+          currentAmount: 0,
+          deadline,
+          icon: '\uD83C\uDFAF',
+          color: '#FF9800',
+          isCompleted: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await savingsRepository.create(goal);
+      }
       setShowCreate(false);
+      setEditingGoal(null);
       setName('');
       setTargetAmount('');
       setDeadline('');
@@ -84,6 +98,7 @@ export function SavingsScreen() {
             try {
               await savingsRepository.delete(goal.id);
               await loadGoals();
+              setSnackbar({ visible: true, message: t.common.deletedToast, type: 'success' });
             } catch {
               Alert.alert(t.common.error, t.savings.deleteFailed);
             }
@@ -91,6 +106,26 @@ export function SavingsScreen() {
         },
       ]
     );
+  };
+
+  const handleContribute = async () => {
+    const amountNum = parseFloat(contributionAmount);
+    if (!contributingGoal || !amountNum || amountNum <= 0) {
+      Alert.alert(t.common.error, t.savings.enterAmount);
+      return;
+    }
+    setIsContributing(true);
+    try {
+      await savingsRepository.updateProgress(contributingGoal.id, amountNum);
+      setContributingGoal(null);
+      setContributionAmount('');
+      await loadGoals();
+      setSnackbar({ visible: true, message: t.savings.contributed, type: 'success' });
+    } catch {
+      Alert.alert(t.common.error, t.savings.contributeFailed);
+    } finally {
+      setIsContributing(false);
+    }
   };
 
   if (isLoading) {
@@ -119,7 +154,7 @@ export function SavingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.savings.create}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{editingGoal ? t.budget.edit : t.savings.create}</Text>
           <Input
             label={t.savings.name}
             value={name}
@@ -141,8 +176,8 @@ export function SavingsScreen() {
           />
           <View style={styles.createActions}>
             <Button
-              title={t.savings.create}
-              onPress={handleCreate}
+              title={editingGoal ? t.savings.edit : t.savings.create}
+              onPress={handleSave}
               loading={isSaving}
               disabled={!name || !targetAmount || !deadline}
               fullWidth
@@ -151,7 +186,7 @@ export function SavingsScreen() {
             <View style={styles.spacer} />
             <Button
               title={t.common.cancel}
-              onPress={() => setShowCreate(false)}
+              onPress={() => { setShowCreate(false); setEditingGoal(null); }}
               variant="ghost"
               fullWidth
             />
@@ -180,15 +215,26 @@ export function SavingsScreen() {
               return (
                 <TouchableOpacity
                   activeOpacity={0.7}
+                  onPress={() => setContributingGoal(item)}
                   onLongPress={() => handleDelete(item)}
                 >
                   <Card style={styles.goalCard}>
                     <View style={styles.goalHeader}>
-                      <View style={[styles.goalIcon, { backgroundColor: item.color + '20' }]}>
-                        <Text style={[styles.goalEmoji, { color: item.color }]}>
-                          {item.icon}
-                        </Text>
-                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setEditingGoal(item);
+                          setName(item.name);
+                          setTargetAmount(item.targetAmount.toString());
+                          setDeadline(item.deadline);
+                          setShowCreate(true);
+                        }}
+                      >
+                        <View style={[styles.goalIcon, { backgroundColor: item.color + '20' }]}>
+                          <Text style={[styles.goalEmoji, { color: item.color }]}>
+                            {item.icon}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
                       <View style={styles.goalInfo}>
                         <Text style={[styles.goalName, { color: colors.text }]}>
                           {item.name}
@@ -229,6 +275,45 @@ export function SavingsScreen() {
           />
         </>
       )}
+      <Modal visible={contributingGoal !== null} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {translate('savings.contribute', { name: contributingGoal?.name ?? '' })}
+            </Text>
+            <Input
+              label={t.savings.currentAmount}
+              value={contributionAmount}
+              onChangeText={setContributionAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+            />
+            <View style={styles.createActions}>
+              <Button
+                title={t.savings.contribute}
+                onPress={handleContribute}
+                loading={isContributing}
+                disabled={!contributionAmount}
+                fullWidth
+                size="lg"
+              />
+              <View style={styles.spacer} />
+              <Button
+                title={t.common.cancel}
+                onPress={() => { setContributingGoal(null); setContributionAmount(''); }}
+                variant="ghost"
+                fullWidth
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        onDismiss={() => setSnackbar(prev => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
@@ -320,5 +405,21 @@ const styles = StyleSheet.create({
   goalPercentage: {
     ...typography.body,
     fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    width: '100%',
+    borderRadius: 16,
+    padding: spacing.xl,
+  },
+  modalTitle: {
+    ...typography.h3,
+    marginBottom: spacing.lg,
   },
 });

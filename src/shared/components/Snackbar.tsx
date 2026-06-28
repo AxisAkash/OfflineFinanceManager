@@ -27,15 +27,15 @@ export function Snackbar({
 
   const getBackgroundColor = () => {
     switch (type) {
-      case 'success': return '#16A34A';
-      case 'error': return '#DC2626';
-      case 'warning': return '#F59E0B';
+      case 'success': return colors.success;
+      case 'error': return colors.error;
+      case 'warning': return colors.warning;
       default: return colors.text;
     }
   };
 
   const getTextColor = () => {
-    return type === 'warning' ? '#0F172A' : '#FFFFFF';
+    return type === 'warning' ? colors.textInverse : colors.textOnPrimary;
   };
 
   const hide = useCallback(() => {

@@ -8,7 +8,7 @@ import { Card, EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/c
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { Category } from '../../../shared/types';
-import { formatCurrency, formatPercentage } from '../../../shared/utils';
+import { formatCurrency, formatPercentage, getMonthName } from '../../../shared/utils';
 
 interface CategoryBreakdown {
   category: Category;
@@ -22,11 +22,9 @@ interface MonthlyTrend {
   expense: number;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 export function AnalyticsScreen() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(true);
@@ -78,18 +76,18 @@ export function AnalyticsScreen() {
         const e = new Date(m.getFullYear(), m.getMonth() + 1, 0).toISOString().split('T')[0];
         const totals = await transactionRepository.getDateRangeTotals(s, e);
         trend.push({
-          month: `${MONTHS[m.getMonth()]} ${m.getFullYear()}`,
+          month: `${getMonthName(m.getMonth(), language)} ${m.getFullYear()}`,
           income: totals.income,
           expense: totals.expense,
         });
       }
       setMonthlyTrend(trend);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+      setError(err instanceof Error ? err.message : t.app.error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language, t]);
 
   useFocusEffect(
     useCallback(() => {

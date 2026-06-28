@@ -34,6 +34,7 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
   const [error, setError] = useState<string | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [newCategoryId, setNewCategoryId] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newPeriod, setNewPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
@@ -48,6 +49,7 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
   useEffect(() => {
     if (isCreating) {
       setShowCreate(true);
+      setEditingBudget(null);
     }
   }, [isCreating]);
 
@@ -67,13 +69,13 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
       setExpenseCategories(allCategories.filter((c) => c.type === 'expense'));
       setOverview(budgetOverview);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load budgets');
+      setError(err instanceof Error ? err.message : t.budget.loadFailed);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
-  const handleCreateBudget = useCallback(async () => {
+  const handleSaveBudget = useCallback(async () => {
     const amountNum = parseFloat(newAmount);
     if (!newCategoryId || !amountNum || amountNum <= 0) {
       Alert.alert(t.common.error, t.budget.selectCategory);
@@ -82,40 +84,51 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
 
     setIsSaving(true);
     try {
-      const now = new Date();
-      const startDate = now.toISOString();
-      let endDate: Date;
-      if (newPeriod === 'yearly') {
-        endDate = new Date(now.getFullYear() + 1, now.getMonth(), 0);
-      } else if (newPeriod === 'weekly') {
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+      if (editingBudget) {
+        await budgetRepository.updateBudget(editingBudget.id, {
+          categoryId: newCategoryId,
+          amount: amountNum,
+          period: newPeriod,
+          startDate: editingBudget.startDate,
+          endDate: editingBudget.endDate,
+        });
       } else {
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const now = new Date();
+        const startDate = now.toISOString();
+        let endDate: Date;
+        if (newPeriod === 'yearly') {
+          endDate = new Date(now.getFullYear() + 1, now.getMonth(), 0);
+        } else if (newPeriod === 'weekly') {
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+        } else {
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        }
+
+        const budget: Budget = {
+          id: generateId(),
+          categoryId: newCategoryId,
+          amount: amountNum,
+          spent: 0,
+          period: newPeriod,
+          startDate,
+          endDate: endDate.toISOString(),
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        };
+
+        await budgetRepository.create(budget);
       }
-
-      const budget: Budget = {
-        id: generateId(),
-        categoryId: newCategoryId,
-        amount: amountNum,
-        spent: 0,
-        period: newPeriod,
-        startDate,
-        endDate: endDate.toISOString(),
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      };
-
-      await budgetRepository.create(budget);
       setShowCreate(false);
+      setEditingBudget(null);
       setNewCategoryId('');
       setNewAmount('');
       await loadData();
     } catch {
-      Alert.alert(t.common.error, t.budget.createFailed);
+      Alert.alert(t.common.error, editingBudget ? t.app.error : t.budget.createFailed);
     } finally {
       setIsSaving(false);
     }
-  }, [newCategoryId, newAmount, newPeriod, loadData, t]);
+  }, [newCategoryId, newAmount, newPeriod, editingBudget, loadData, t]);
 
   const handleDeleteBudget = useCallback((budget: Budget) => {
     Alert.alert(
@@ -165,7 +178,7 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.budget.create}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{editingBudget ? t.budget.edit : t.budget.create}</Text>
 
           <Text style={[styles.fieldLabel, { color: colors.text }]}>{t.budget.category}</Text>
           <View style={styles.categoryGrid}>
@@ -245,8 +258,8 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
 
           <View style={styles.createActions}>
             <Button
-              title={t.budget.create}
-              onPress={handleCreateBudget}
+              title={editingBudget ? t.budget.edit : t.budget.create}
+              onPress={handleSaveBudget}
               loading={isSaving}
               disabled={!newCategoryId || !newAmount}
               fullWidth
@@ -255,7 +268,7 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
             <View style={styles.spacer} />
             <Button
               title={t.common.cancel}
-              onPress={() => setShowCreate(false)}
+              onPress={() => { setShowCreate(false); setEditingBudget(null); }}
               variant="ghost"
               fullWidth
             />
@@ -320,6 +333,13 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
               return (
                 <TouchableOpacity
                   activeOpacity={0.7}
+                  onPress={() => {
+                    setEditingBudget(item);
+                    setNewCategoryId(item.categoryId);
+                    setNewAmount(item.amount.toString());
+                    setNewPeriod(item.period);
+                    setShowCreate(true);
+                  }}
                   onLongPress={() => handleDeleteBudget(item)}
                 >
                   <Card style={[styles.budgetItem, { borderLeftColor: barColor }]}>

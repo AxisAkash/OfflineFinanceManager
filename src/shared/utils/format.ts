@@ -73,3 +73,13 @@ export function isValidAmount(value: string): boolean {
 export function sanitizeInput(value: string): string {
   return value.trim().replace(/[<>"']/g, '');
 }
+
+export function getMonthName(monthIndex: number, language: string = 'en'): string {
+  const localeMap: Record<string, string> = {
+    en: 'en-US',
+    bn: 'bn-BD',
+  };
+  const locale = localeMap[language] || 'en-US';
+  const date = new Date(2024, monthIndex, 1);
+  return new Intl.DateTimeFormat(locale, { month: 'short' }).format(date);
+}
