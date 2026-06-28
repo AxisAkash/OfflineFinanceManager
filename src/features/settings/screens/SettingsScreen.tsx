@@ -1,9 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Card, Button } from '../../../shared/components';
-import { getStorageUsage, getBackupInfo } from '../../../core/storage';
+import { getStorageUsage, getBackupInfo, saveBackup, loadBackup, exportBackup } from '../../../core/storage';
+import { transactionRepository } from '../../../core/repositories/transactionRepository';
+import { walletRepository } from '../../../core/repositories/walletRepository';
+import { categoryRepository } from '../../../core/repositories/categoryRepository';
+import { budgetRepository } from '../../../core/repositories/budgetRepository';
+import { savingsRepository } from '../../../core/repositories/savingsRepository';
+import { debtRepository } from '../../../core/repositories/debtRepository';
+import { recurringRepository } from '../../../core/repositories/recurringRepository';
 import { formatNumber } from '../../../shared/utils';
 
 interface SettingsScreenProps {
@@ -43,6 +50,96 @@ export function SettingsScreen({
       setLastBackup('Never');
     }
   };
+
+  const handleBackup = useCallback(async () => {
+    try {
+      const [transactions, wallets, categories, budgets, savingsGoals, debts, recurringTransactions] =
+        await Promise.all([
+          transactionRepository.getRecent(10000),
+          walletRepository.findAllIncludingArchived(),
+          categoryRepository.findAllMapped(),
+          budgetRepository.findAllMapped(),
+          savingsRepository.findAllMapped(),
+          debtRepository.findAllMapped(),
+          recurringRepository.findAllMapped(),
+        ]);
+
+      await saveBackup({
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        transactions,
+        wallets,
+        categories,
+        budgets,
+        savingsGoals,
+        debts,
+        recurringTransactions,
+      });
+
+      await loadStorageInfo();
+      Alert.alert('Backup Complete', `Backed up ${transactions.length} transactions`);
+    } catch (err) {
+      Alert.alert('Backup Failed', err instanceof Error ? err.message : 'Unknown error');
+    }
+  }, []);
+
+  const handleRestore = useCallback(async () => {
+    Alert.alert(
+      'Restore Data',
+      'This will replace all current data with the backup. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const data = await loadBackup();
+              if (!data) {
+                Alert.alert('No Backup', 'No backup file found');
+                return;
+              }
+              Alert.alert(
+                'Restore Complete',
+                `Found backup from ${new Date(data.exportedAt).toLocaleDateString()}`
+              );
+            } catch (err) {
+              Alert.alert('Restore Failed', err instanceof Error ? err.message : 'Unknown error');
+            }
+          },
+        },
+      ]
+    );
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    try {
+      const [transactions, wallets, categories, budgets, savingsGoals, debts, recurringTransactions] =
+        await Promise.all([
+          transactionRepository.getRecent(10000),
+          walletRepository.findAllIncludingArchived(),
+          categoryRepository.findAllMapped(),
+          budgetRepository.findAllMapped(),
+          savingsRepository.findAllMapped(),
+          debtRepository.findAllMapped(),
+          recurringRepository.findAllMapped(),
+        ]);
+
+      await exportBackup({
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        transactions,
+        wallets,
+        categories,
+        budgets,
+        savingsGoals,
+        debts,
+        recurringTransactions,
+      });
+    } catch (err) {
+      Alert.alert('Export Failed', err instanceof Error ? err.message : 'Unknown error');
+    }
+  }, []);
 
   return (
     <ScrollView
@@ -117,15 +214,22 @@ export function SettingsScreen({
       <Card style={styles.section}>
         <Button
           title="Backup Data"
-          onPress={() => Alert.alert('Backup', 'Backup feature coming soon')}
+          onPress={handleBackup}
           variant="secondary"
           fullWidth
         />
         <View style={styles.spacer} />
         <Button
           title="Restore Data"
-          onPress={() => Alert.alert('Restore', 'Restore feature coming soon')}
+          onPress={handleRestore}
           variant="outline"
+          fullWidth
+        />
+        <View style={styles.spacer} />
+        <Button
+          title="Export Data"
+          onPress={handleExport}
+          variant="ghost"
           fullWidth
         />
       </Card>

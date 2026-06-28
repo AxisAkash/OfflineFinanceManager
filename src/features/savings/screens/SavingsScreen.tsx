@@ -42,8 +42,11 @@ export function SavingsScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
-          title="No Savings Goals"
-          description="Create goals to track your savings progress"
+          icon={'\uD83C\uDFAF'}
+          title="No savings goals"
+          description="Set financial goals and track your progress towards them"
+          actionLabel="Create Goal"
+          onAction={() => {}}
         />
       </View>
     );

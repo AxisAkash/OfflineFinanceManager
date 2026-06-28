@@ -42,8 +42,11 @@ export function DebtScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
-          title="No Debts"
-          description="Track your debts and payments in one place"
+          icon={'\uD83D\uDCB8'}
+          title="No debts tracked"
+          description="Add your loans and debts to track payments and interest"
+          actionLabel="Add Debt"
+          onAction={() => {}}
         />
       </View>
     );

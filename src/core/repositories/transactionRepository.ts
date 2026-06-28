@@ -182,8 +182,20 @@ export class TransactionRepository extends BaseRepository {
     return rows.map((r) => ({ categoryId: r.category_id, amount: r.amount }));
   }
 
+  async findByIdTransformed(id: string): Promise<Transaction | null> {
+    const row = await this.executeSqlSingle<TransactionRow>(
+      'SELECT * FROM transactions WHERE id = ?',
+      [id]
+    );
+    return row ? rowToTransaction(row) : null;
+  }
+
   async getByWalletId(walletId: string): Promise<Transaction[]> {
     return this.findAllFiltered({ walletId, sortBy: 'date', sortOrder: 'DESC' });
+  }
+
+  async getByCategoryId(categoryId: string): Promise<Transaction[]> {
+    return this.findAllFiltered({ categoryId, sortBy: 'date', sortOrder: 'DESC' });
   }
 
   async getByCategoryId(categoryId: string): Promise<Transaction[]> {

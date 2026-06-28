@@ -50,8 +50,11 @@ export function RecurringScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
-          title="No Recurring Transactions"
+          icon={'\uD83D\uDD04'}
+          title="No recurring transactions"
           description="Set up recurring bills and income for automatic tracking"
+          actionLabel="Add Recurring"
+          onAction={() => {}}
         />
       </View>
     );

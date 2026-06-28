@@ -42,19 +42,21 @@ export function TransactionDetailScreen({
     try {
       setIsLoading(true);
       setError(null);
-      const txn = await transactionRepository.findById<Transaction>(transactionId);
+      const txn = await transactionRepository.findByIdTransformed(transactionId);
       if (!txn) {
         setError('Transaction not found');
         return;
       }
       setTransaction(txn);
 
-      const [cat, wal] = await Promise.all([
-        categoryRepository.findById<Category>(txn.categoryId),
-        walletRepository.findById<Wallet>(txn.walletId),
+      const [allCats, allWallets] = await Promise.all([
+        categoryRepository.findAllMapped(),
+        walletRepository.findAllIncludingArchived(),
       ]);
-      if (cat) setCategory(cat);
-      if (wal) setWallet(wal);
+      const foundCat = allCats.find((c) => c.id === txn.categoryId);
+      const foundWal = allWallets.find((w) => w.id === txn.walletId);
+      if (foundCat) setCategory(foundCat);
+      if (foundWal) setWallet(foundWal);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load transaction');
     } finally {
