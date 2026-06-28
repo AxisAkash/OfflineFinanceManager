@@ -5,7 +5,7 @@ import { spacing, borderRadius } from '../theme/spacing';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   padded?: boolean;
 }
 

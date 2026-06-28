@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, FAB } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
 import { budgetRepository } from '../../../core/repositories/budgetRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';

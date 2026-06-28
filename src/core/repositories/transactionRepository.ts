@@ -197,10 +197,6 @@ export class TransactionRepository extends BaseRepository {
   async getByCategoryId(categoryId: string): Promise<Transaction[]> {
     return this.findAllFiltered({ categoryId, sortBy: 'date', sortOrder: 'DESC' });
   }
-
-  async getByCategoryId(categoryId: string): Promise<Transaction[]> {
-    return this.findAllFiltered({ categoryId, sortBy: 'date', sortOrder: 'DESC' });
-  }
 }
 
 export const transactionRepository = new TransactionRepository();
