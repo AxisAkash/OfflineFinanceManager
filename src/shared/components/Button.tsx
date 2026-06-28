@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../theme';
 import { spacing, borderRadius, typography } from '../theme/spacing';
+import { ColorScheme } from '../theme/colors';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -120,8 +121,6 @@ function getTextColor(variant: ButtonVariant, colors: ColorScheme): string {
       return colors.textOnPrimary;
   }
 }
-
-import { ColorScheme } from '../theme/colors';
 
 const styles = StyleSheet.create({
   base: {

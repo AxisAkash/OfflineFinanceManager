@@ -87,7 +87,7 @@ export function SavingsScreen() {
                     styles.progressFill,
                     {
                       backgroundColor: item.color,
-                      width: `${Math.min(percentage, 100)}%` as unknown as number,
+                      width: `${Math.min(percentage, 100)}%`,
                     },
                   ]}
                 />

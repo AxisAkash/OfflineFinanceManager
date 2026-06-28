@@ -122,12 +122,20 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: undefined;
   Main: undefined;
+  AddTransaction: { walletId?: string } | undefined;
+  EditTransaction: { transactionId: string };
+  TransactionDetail: { transactionId: string };
+  WalletManagement: undefined;
+  SavingsGoals: undefined;
+  DebtTracker: undefined;
+  RecurringTransactions: undefined;
+  ReportsHub: undefined;
+  CreateBudget: { categoryId?: string } | undefined;
 };
 
 export type AuthStackParamList = {
   CreatePin: undefined;
-  EnterPin: { isSetup: boolean };
-  BiometricSetup: undefined;
+  EnterPin: undefined;
 };
 
 export type MainTabParamList = {

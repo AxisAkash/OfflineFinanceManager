@@ -43,25 +43,19 @@ export function AnalyticsScreen() {
       setMonthlyIncome(monthlyTotals.income);
       setMonthlyExpenses(monthlyTotals.expense);
 
-      const expenseCategories = allCategories.filter((c) => c.type === 'expense');
-      const breakdown: CategoryBreakdown[] = [];
-
-      for (const category of expenseCategories) {
-        const txns = await transactionRepository.getByCategoryId(category.id);
-        const total = txns
-          .filter((t) => t.date >= startOfMonth && t.date <= endOfMonth)
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        if (total > 0) {
-          breakdown.push({
+      const categoryBreakdownRows = await transactionRepository.getCategoryBreakdown(startOfMonth, endOfMonth);
+      const catMap = new Map(allCategories.map((c) => [c.id, c]));
+      const breakdown: CategoryBreakdown[] = categoryBreakdownRows
+        .filter((r) => catMap.has(r.categoryId))
+        .map((r) => {
+          const category = catMap.get(r.categoryId)!;
+          return {
             category,
-            amount: total,
-            percentage: monthlyTotals.expense > 0 ? (total / monthlyTotals.expense) * 100 : 0,
-          });
-        }
-      }
+            amount: r.amount,
+            percentage: monthlyTotals.expense > 0 ? (r.amount / monthlyTotals.expense) * 100 : 0,
+          };
+        });
 
-      breakdown.sort((a, b) => b.amount - a.amount);
       setCategoryBreakdown(breakdown);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
@@ -143,7 +137,7 @@ export function AnalyticsScreen() {
                 styles.progressFill,
                 {
                   backgroundColor: item.category.color,
-                  width: `${item.percentage}%` as unknown as number,
+                  width: `${item.percentage}%`,
                 },
               ]}
             />

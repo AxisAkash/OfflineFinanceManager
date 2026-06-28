@@ -8,6 +8,8 @@ interface CategoryRow {
   color: string;
   type: string;
   budget_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 function rowToCategory(row: CategoryRow): Category {
@@ -48,6 +50,7 @@ export class CategoryRepository extends BaseRepository {
   }
 
   async create(category: Category): Promise<void> {
+    const now = new Date().toISOString();
     const row: CategoryRow = {
       id: category.id,
       name: category.name,
@@ -55,6 +58,8 @@ export class CategoryRepository extends BaseRepository {
       color: category.color,
       type: category.type,
       budget_id: category.budgetId || null,
+      created_at: now,
+      updated_at: now,
     };
     await this.insert(row);
   }

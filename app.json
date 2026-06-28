@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Offline Finance Manager uses Face ID or Touch ID to securely unlock the app."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +31,8 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-local-authentication"
     ]
   }
 }

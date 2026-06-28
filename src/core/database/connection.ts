@@ -1,5 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { DATABASE_NAME, CREATE_TABLES, CREATE_INDEXES } from './schema';
+import { runMigrations, getSchemaVersion, setSchemaVersion } from './migrations';
+import { validateSchema, formatValidationErrors } from './validation';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -9,21 +11,46 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 
   db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  await db.execAsync('PRAGMA journal_mode = WAL');
+  await db.execAsync('PRAGMA foreign_keys = ON');
   return db;
 }
 
 export async function initializeDatabase(): Promise<void> {
   const database = await getDatabase();
 
-  await database.execAsync(CREATE_TABLES);
-  await database.execAsync(CREATE_INDEXES);
+  const currentVersion = await getSchemaVersion(database);
+
+  if (currentVersion === 0) {
+    await database.execAsync('BEGIN TRANSACTION');
+    try {
+      await database.execAsync(CREATE_TABLES);
+      await database.execAsync(CREATE_INDEXES);
+      await setSchemaVersion(database, 2);
+      await database.execAsync('COMMIT');
+    } catch (err) {
+      await database.execAsync('ROLLBACK');
+      throw err;
+    }
+  } else {
+    await runMigrations(database);
+  }
 
   await seedDefaultCategories(database);
+
+  const validation = await validateSchema(database);
+  if (!validation.isValid) {
+    const errorMsg = formatValidationErrors(validation);
+    // eslint-disable-next-line no-console
+    console.warn(`[DB] Schema validation issues: ${errorMsg}`);
+  }
 }
 
-async function seedDefaultCategories(database: SQLite.SQLiteDatabase): Promise<void> {
+export async function seedDefaultCategories(
+  database: SQLite.SQLiteDatabase
+): Promise<void> {
   const existingCount = await database.getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM categories'
+    `SELECT COUNT(*) as count FROM categories`
   );
 
   if (existingCount && existingCount.count > 0) {
@@ -56,7 +83,7 @@ async function seedDefaultCategories(database: SQLite.SQLiteDatabase): Promise<v
   const now = new Date().toISOString();
   for (const cat of defaultCategories) {
     await database.runAsync(
-      `INSERT INTO categories (id, name, icon, color, type, created_at, updated_at)
+      `INSERT OR IGNORE INTO categories (id, name, icon, color, type, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [cat.id, cat.name, cat.icon, cat.color, cat.type, now, now]
     );

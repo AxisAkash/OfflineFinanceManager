@@ -131,7 +131,7 @@ export function DebtScreen() {
                     Interest
                   </Text>
                   <Text style={[styles.debtAmountValue, { color: colors.warning }]}>
-                    {formatPercentage(item.interestRate)}%
+                    {formatPercentage(item.interestRate)}
                   </Text>
                 </View>
               </View>
@@ -141,7 +141,7 @@ export function DebtScreen() {
                     styles.progressFill,
                     {
                       backgroundColor: colors.primary,
-                      width: `${Math.min(paidPercentage, 100)}%` as unknown as number,
+                      width: `${Math.min(paidPercentage, 100)}%`,
                     },
                   ]}
                 />

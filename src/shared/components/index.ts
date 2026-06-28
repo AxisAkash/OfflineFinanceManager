@@ -5,3 +5,4 @@ export { Skeleton, SkeletonCard, SkeletonList, SkeletonChart } from './Skeleton'
 export { EmptyState } from './EmptyState';
 export { ErrorMessage } from './ErrorMessage';
 export { LoadingScreen } from './LoadingScreen';
+export { FAB } from './FAB';

@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/components';
+import { EmptyState, LoadingScreen, ErrorMessage, FAB } from '../../../shared/components';
 import { TransactionItem } from '../components/TransactionItem';
 import { useTransactions } from '../hooks/useTransactions';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
-import { Category } from '../../../shared/types';
+import { Category, Transaction } from '../../../shared/types';
 
-export function TransactionsScreen() {
+interface TransactionsScreenProps {
+  onAddTransaction?: () => void;
+}
+
+export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps) {
   const { colors } = useTheme();
+  const navigation = useNavigation<any>();
   const {
     transactions,
     isLoading,
@@ -22,30 +28,52 @@ export function TransactionsScreen() {
     loadCategories();
   }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     const all = await categoryRepository.findAllMapped();
     const map: Record<string, Category> = {};
     all.forEach((cat) => {
       map[cat.id] = cat;
     });
     setCategories(map);
-  };
+  }, []);
+
+  const handleTransactionPress = useCallback((transaction: Transaction) => {
+    navigation.navigate('TransactionDetail', { transactionId: transaction.id });
+  }, [navigation]);
+
+  const handleAddTransaction = useCallback(() => {
+    if (onAddTransaction) {
+      onAddTransaction();
+    }
+  }, [onAddTransaction]);
 
   if (isLoading) {
-    return <LoadingScreen type="list" />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LoadingScreen type="list" />
+      </View>
+    );
   }
 
   if (error) {
-    return <ErrorMessage message={error} onRetry={refresh} />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ErrorMessage message={error} onRetry={refresh} />
+      </View>
+    );
   }
 
   if (transactions.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
-          title="No Transactions"
+          icon={'\uD83D\uDCB3'}
+          title="No transactions"
           description="Start tracking your finances by adding your first transaction"
+          actionLabel="Create Transaction"
+          onAction={handleAddTransaction}
         />
+        <FAB onPress={handleAddTransaction} />
       </View>
     );
   }
@@ -56,6 +84,9 @@ export function TransactionsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>
           Transactions
         </Text>
+        <Text style={[styles.count, { color: colors.textSecondary }]}>
+          {transactions.length} total
+        </Text>
       </View>
       <FlatList
         data={transactions}
@@ -65,11 +96,13 @@ export function TransactionsScreen() {
             transaction={item}
             categoryName={categories[item.categoryId]?.name}
             categoryColor={categories[item.categoryId]?.color}
+            onPress={handleTransactionPress}
           />
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
+      <FAB onPress={handleAddTransaction} />
     </View>
   );
 }
@@ -79,6 +112,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.md,
@@ -86,7 +122,10 @@ const styles = StyleSheet.create({
   title: {
     ...typography.h2,
   },
+  count: {
+    ...typography.bodySmall,
+  },
   list: {
-    paddingBottom: spacing.huge,
+    paddingBottom: spacing.huge + 60,
   },
 });

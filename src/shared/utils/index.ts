@@ -3,6 +3,7 @@ export {
   formatDate,
   formatRelativeDate,
   formatPercentage,
+  formatPercentageWithSign,
   formatNumber,
   generateId,
   isValidAmount,

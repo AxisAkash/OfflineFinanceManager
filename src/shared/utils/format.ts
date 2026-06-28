@@ -39,6 +39,10 @@ export function formatRelativeDate(date: string): string {
 }
 
 export function formatPercentage(value: number, decimals: number = 1): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+export function formatPercentageWithSign(value: number, decimals: number = 1): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
 

@@ -101,26 +101,6 @@ export class TransactionRepository extends BaseRepository {
     return this.findAllFiltered({ limit, sortBy: 'date', sortOrder: 'DESC' });
   }
 
-  async getMonthlyTotals(year: number, month: number): Promise<{ income: number; expense: number }> {
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
-
-    const db = await this.dbPromise;
-    const incomeResult = await db.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
-      ['income', startDate, endDate]
-    );
-    const expenseResult = await db.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
-      ['expense', startDate, endDate]
-    );
-
-    return {
-      income: incomeResult?.total || 0,
-      expense: expenseResult?.total || 0,
-    };
-  }
-
   async getYearlyTotals(year: number): Promise<{ income: number; expense: number }> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
@@ -145,20 +125,35 @@ export class TransactionRepository extends BaseRepository {
   }
 
   async create(transaction: Transaction): Promise<void> {
-    const row: TransactionRow = {
-      id: transaction.id,
-      wallet_id: transaction.walletId,
-      category_id: transaction.categoryId,
-      amount: transaction.amount,
-      type: transaction.type,
-      description: transaction.description,
-      date: transaction.date,
-      is_recurring: transaction.isRecurring ? 1 : 0,
-      recurring_id: transaction.recurringId || null,
-      created_at: transaction.createdAt,
-      updated_at: transaction.updatedAt,
-    };
-    await this.insert(row);
+    const db = await this.dbPromise;
+    await db.runAsync('BEGIN TRANSACTION');
+    try {
+      const row: TransactionRow = {
+        id: transaction.id,
+        wallet_id: transaction.walletId,
+        category_id: transaction.categoryId,
+        amount: transaction.amount,
+        type: transaction.type,
+        description: transaction.description,
+        date: transaction.date,
+        is_recurring: transaction.isRecurring ? 1 : 0,
+        recurring_id: transaction.recurringId || null,
+        created_at: transaction.createdAt,
+        updated_at: transaction.updatedAt,
+      };
+      await this.insert(row);
+
+      const sign = transaction.type === 'income' ? 1 : -1;
+      await db.runAsync(
+        'UPDATE wallets SET balance = balance + (?), updated_at = ? WHERE id = ?',
+        [sign * transaction.amount, transaction.createdAt, transaction.walletId]
+      );
+
+      await db.runAsync('COMMIT');
+    } catch (err) {
+      await db.runAsync('ROLLBACK');
+      throw err;
+    }
   }
 
   async updateTransaction(id: string, updates: Partial<Transaction>): Promise<void> {
@@ -174,6 +169,17 @@ export class TransactionRepository extends BaseRepository {
     rowUpdates.updated_at = new Date().toISOString();
 
     await this.update(id, rowUpdates);
+  }
+
+  async getCategoryBreakdown(startDate: string, endDate: string): Promise<{ categoryId: string; amount: number }[]> {
+    const db = await this.dbPromise;
+    const rows = await db.getAllAsync<{ category_id: string; amount: number }>(
+      `SELECT category_id, SUM(amount) as amount FROM transactions
+       WHERE type = 'expense' AND date >= ? AND date <= ?
+       GROUP BY category_id ORDER BY amount DESC`,
+      [startDate, endDate]
+    );
+    return rows.map((r) => ({ categoryId: r.category_id, amount: r.amount }));
   }
 
   async getByWalletId(walletId: string): Promise<Transaction[]> {
