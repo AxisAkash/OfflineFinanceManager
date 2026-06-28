@@ -76,7 +76,7 @@ export function TransactionDetailScreen({
           onPress: async () => {
             try {
               if (transaction) {
-                await transactionRepository.delete(transaction.id);
+                await transactionRepository.deleteTransaction(transaction.id);
               }
               onClose();
             } catch (err) {

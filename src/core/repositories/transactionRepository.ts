@@ -197,6 +197,27 @@ export class TransactionRepository extends BaseRepository {
   async getByCategoryId(categoryId: string): Promise<Transaction[]> {
     return this.findAllFiltered({ categoryId, sortBy: 'date', sortOrder: 'DESC' });
   }
+
+  async deleteTransaction(id: string): Promise<void> {
+    const db = await this.dbPromise;
+    const txn = await this.findByIdTransformed(id);
+    if (!txn) return;
+
+    await db.runAsync('BEGIN TRANSACTION');
+    try {
+      const sign = txn.type === 'income' ? -1 : 1;
+      await db.runAsync(
+        'UPDATE wallets SET balance = balance + (?), updated_at = ? WHERE id = ?',
+        [sign * txn.amount, new Date().toISOString(), txn.walletId]
+      );
+
+      await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
+      await db.runAsync('COMMIT');
+    } catch (err) {
+      await db.runAsync('ROLLBACK');
+      throw err;
+    }
+  }
 }
 
 export const transactionRepository = new TransactionRepository();

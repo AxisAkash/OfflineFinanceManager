@@ -72,7 +72,7 @@ export function useTransactions(): UseTransactionsResult {
 
   const deleteTransaction = useCallback(async (id: string): Promise<boolean> => {
     try {
-      await transactionRepository.delete(id);
+      await transactionRepository.deleteTransaction(id);
       setTransactions((prev) => prev.filter((t) => t.id !== id));
       return true;
     } catch (err) {
