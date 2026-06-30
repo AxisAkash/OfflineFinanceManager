@@ -1,4 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import {
   isPinSetup,
   verifyPin,
@@ -111,4 +112,12 @@ export async function setupNewPin(
 
 export async function resetAuth(): Promise<void> {
   await clearAll();
+  const keys = ['app_theme_mode', 'app_language'];
+  for (const key of keys) {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // Ignore individual key deletion failures
+    }
+  }
 }

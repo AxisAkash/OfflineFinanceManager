@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,7 @@ import { useTheme } from '../theme';
 import { RootStackParamList, AuthStackParamList, MainTabParamList } from '../types';
 import { CreatePinScreen } from '../../features/authentication/screens/CreatePinScreen';
 import { EnterPinScreen } from '../../features/authentication/screens/EnterPinScreen';
+import { ChangePinScreen } from '../../features/authentication/screens/ChangePinScreen';
 import { DashboardScreen } from '../../features/dashboard/screens/DashboardScreen';
 import { TransactionsScreen } from '../../features/transaction/screens/TransactionsScreen';
 import { BudgetScreen } from '../../features/budget/screens/BudgetScreen';
@@ -65,9 +66,9 @@ const tabStyles = StyleSheet.create({
   },
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MainTabs({ navigation }: { navigation: any }) {
+function MainTabs() {
   const { colors } = useTheme();
+  const { height } = useWindowDimensions();
 
   return (
     <Tab.Navigator
@@ -79,7 +80,7 @@ function MainTabs({ navigation }: { navigation: any }) {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 60,
+          height: Math.min(60, height * 0.07),
           paddingBottom: 8,
           paddingTop: 8,
         },
@@ -91,7 +92,7 @@ function MainTabs({ navigation }: { navigation: any }) {
     >
       <Tab.Screen
         name="Dashboard"
-        children={() => <DashboardScreen onAddTransaction={() => navigation.navigate('AddTransaction')} />}
+        component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
             <TabIcon label="Dashboard" focused={focused} color={color} />
@@ -100,7 +101,7 @@ function MainTabs({ navigation }: { navigation: any }) {
       />
       <Tab.Screen
         name="Transactions"
-        children={() => <TransactionsScreen onAddTransaction={() => navigation.navigate('AddTransaction')} />}
+        component={TransactionsScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
             <TabIcon label="Transactions" focused={focused} color={color} />
@@ -109,7 +110,7 @@ function MainTabs({ navigation }: { navigation: any }) {
       />
       <Tab.Screen
         name="Budget"
-        children={() => <BudgetScreen onCreateBudget={() => navigation.navigate('CreateBudget')} />}
+        component={BudgetScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
             <TabIcon label="Budget" focused={focused} color={color} />
@@ -127,15 +128,7 @@ function MainTabs({ navigation }: { navigation: any }) {
       />
       <Tab.Screen
         name="Settings"
-        children={() => (
-          <SettingsScreen
-            onNavigateSavings={() => navigation.navigate('SavingsGoals')}
-            onNavigateDebt={() => navigation.navigate('DebtTracker')}
-            onNavigateRecurring={() => navigation.navigate('RecurringTransactions')}
-            onNavigateReports={() => navigation.navigate('ReportsHub')}
-            onNavigateWallets={() => navigation.navigate('WalletManagement')}
-          />
-        )}
+        component={SettingsScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
             <TabIcon label="Settings" focused={focused} color={color} />
@@ -183,7 +176,7 @@ function ModalHeader({ title, onClose }: { title: string; onClose: () => void })
     <View style={modalStyles.header}>
       <Button title="Close" variant="ghost" size="sm" onPress={onClose} />
       <Text style={[modalStyles.title, { color: colors.text }]}>{title}</Text>
-      <View style={{ width: 60 }} />
+      <View style={{ flex: 1 }} />
     </View>
   );
 }
@@ -211,6 +204,7 @@ export function AppNavigator() {
     loginWithPin,
     loginWithBiometrics,
     createPin,
+    changePin,
   } = useAuth();
 
   if (isLoading) {
@@ -352,6 +346,20 @@ export function AppNavigator() {
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
                   <ModalHeader title="Create Budget" onClose={() => navigation.goBack()} />
                   <BudgetScreen onCreateBudget={() => navigation.goBack()} isCreating />
+                </View>
+              )}
+            </RootStack.Screen>
+            <RootStack.Screen
+              name="ChangePin"
+              options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+            >
+              {({ navigation }) => (
+                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                  <ModalHeader title="Change PIN" onClose={() => navigation.goBack()} />
+                  <ChangePinScreen
+                    onChangePin={changePin}
+                    onClose={() => navigation.goBack()}
+                  />
                 </View>
               )}
             </RootStack.Screen>

@@ -69,19 +69,40 @@ export function AnalyticsScreen() {
 
       setCategoryBreakdown(breakdown);
 
-      const trend: MonthlyTrend[] = [];
+      const trendMonths: MonthlyTrend[] = [];
+      const months: Date[] = [];
       for (let i = 5; i >= 0; i--) {
-        const m = new Date(currentYear, currentMonth - i, 1);
-        const s = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}-01`;
-        const e = new Date(m.getFullYear(), m.getMonth() + 1, 0).toISOString().split('T')[0];
-        const totals = await transactionRepository.getDateRangeTotals(s, e);
-        trend.push({
-          month: `${getMonthName(m.getMonth(), language)} ${m.getFullYear()}`,
+        months.push(new Date(currentYear, currentMonth - i, 1));
+      }
+
+      const yearsNeeded = [...new Set(months.map(m => m.getFullYear()))];
+      const totalsByMonth = new Map<string, { income: number; expense: number }>();
+
+      const allMonthlyTotals = await Promise.all(
+        yearsNeeded.map(year => transactionRepository.getMonthlyTotals(year))
+      );
+
+      for (let i = 0; i < yearsNeeded.length; i++) {
+        const year = yearsNeeded[i];
+        const monthlyTotals = allMonthlyTotals[i];
+        for (const mt of monthlyTotals) {
+          totalsByMonth.set(`${year}-${String(mt.month).padStart(2, '0')}`, {
+            income: mt.income,
+            expense: mt.expense,
+          });
+        }
+      }
+
+      for (const d of months) {
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const totals = totalsByMonth.get(key) || { income: 0, expense: 0 };
+        trendMonths.push({
+          month: `${getMonthName(d.getMonth(), language)} ${d.getFullYear()}`,
           income: totals.income,
           expense: totals.expense,
         });
       }
-      setMonthlyTrend(trend);
+      setMonthlyTrend(trendMonths);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.app.error);
     } finally {

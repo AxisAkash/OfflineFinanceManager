@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
@@ -60,6 +60,10 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
   const canUseBiometrics = biometricInfo?.isAvailable && biometricInfo?.isEnrolled;
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
@@ -122,6 +126,7 @@ export function CreatePinScreen({ onComplete }: CreatePinScreenProps) {
         size="lg"
       />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

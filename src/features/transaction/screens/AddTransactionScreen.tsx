@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
 import { Input, Button } from '../../../shared/components';
@@ -163,6 +163,10 @@ export function AddTransactionScreen({
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
@@ -317,6 +321,7 @@ export function AddTransactionScreen({
         size="lg"
       />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

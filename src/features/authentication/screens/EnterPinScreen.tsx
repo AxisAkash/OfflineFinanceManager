@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
@@ -93,7 +93,10 @@ export function EnterPinScreen({
   const handleBiometric = async () => {
     try {
       setIsBiometricLoading(true);
-      await onBiometricLogin();
+      const success = await onBiometricLogin();
+      if (!success) {
+        setError(t.auth.biometricAuthFailed);
+      }
     } catch {
       setError(t.auth.biometricAuthFailed);
     } finally {
@@ -102,6 +105,10 @@ export function EnterPinScreen({
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>
@@ -156,6 +163,7 @@ export function EnterPinScreen({
         )}
       </View>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

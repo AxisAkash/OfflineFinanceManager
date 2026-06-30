@@ -58,6 +58,8 @@ export const bn: DeepPartial<typeof en> = {
     newPin: 'নতুন পিন',
     pinChanged: 'পিন সফলভাবে পরিবর্তিত হয়েছে',
     pinChangeFailed: 'পিন পরিবর্তন করতে ব্যর্থ',
+    invalidCurrentPin: 'বর্তমান পিন ভুল',
+    pinSameAsCurrent: 'নতুন পিন বর্তমান পিনের থেকে আলাদা হতে হবে',
   },
   transaction: {
     title: 'লেনদেন',

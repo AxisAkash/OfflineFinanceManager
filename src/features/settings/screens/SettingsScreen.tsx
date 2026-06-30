@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
+import { RootStackParamList } from '../../../shared/types';
 import { spacing, typography } from '../../../shared/theme/spacing';
 import { Card, Button } from '../../../shared/components';
 import { getStorageUsage, getBackupInfo, saveBackup, loadBackup, exportBackup } from '../../../core/storage';
@@ -17,24 +21,11 @@ import { useAuth } from '../../authentication/hooks/useAuth';
 import { isBiometricEnabled, setBiometricEnabled } from '../../../core/encryption';
 import { getBiometricInfo } from '../../authentication/services/authService';
 
-interface SettingsScreenProps {
-  onNavigateSavings?: () => void;
-  onNavigateDebt?: () => void;
-  onNavigateRecurring?: () => void;
-  onNavigateReports?: () => void;
-  onNavigateWallets?: () => void;
-}
-
-export function SettingsScreen({
-  onNavigateSavings,
-  onNavigateDebt,
-  onNavigateRecurring,
-  onNavigateReports,
-  onNavigateWallets,
-}: SettingsScreenProps) {
+export function SettingsScreen() {
   const { colors, isDark, setMode, mode } = useTheme();
   const { t, translate } = useLanguage();
   const { logout, lock } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [dbSize, setDbSize] = useState(t.settings.calculating);
   const [lastBackup, setLastBackup] = useState(t.settings.never);
   const [biometricOn, setBiometricOn] = useState(false);
@@ -77,23 +68,7 @@ export function SettingsScreen({
   };
 
   const handleChangePin = () => {
-    Alert.alert(
-      t.settings.changePin,
-      t.auth.changePinDescription,
-      [
-        { text: t.common.cancel, style: 'cancel' },
-        {
-          text: t.common.confirm,
-          onPress: () => {
-            Alert.alert(
-              t.settings.changePin,
-              t.settings.changePinPlaceholder,
-              [{ text: t.app.ok }]
-            );
-          },
-        },
-      ]
-    );
+    navigation.navigate('ChangePin');
   };
 
   const handleBackup = useCallback(async () => {
@@ -254,6 +229,7 @@ export function SettingsScreen({
           onPress: async () => {
             try {
               await logout();
+              Alert.alert(t.settings.logout, 'You have been logged out');
             } catch {
               Alert.alert(t.common.error, t.auth.logoutFailed);
             }
@@ -264,6 +240,7 @@ export function SettingsScreen({
   };
 
   return (
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
@@ -316,35 +293,35 @@ export function SettingsScreen({
       <Card style={styles.section}>
         <Button
           title={t.settings.wallets}
-          onPress={() => onNavigateWallets?.()}
+          onPress={() => navigation.navigate('WalletManagement')}
           variant="secondary"
           fullWidth
         />
         <View style={styles.spacer} />
         <Button
           title={t.settings.savingsGoals}
-          onPress={() => onNavigateSavings?.()}
+          onPress={() => navigation.navigate('SavingsGoals')}
           variant="secondary"
           fullWidth
         />
         <View style={styles.spacer} />
         <Button
           title={t.settings.debtTracker}
-          onPress={() => onNavigateDebt?.()}
+          onPress={() => navigation.navigate('DebtTracker')}
           variant="secondary"
           fullWidth
         />
         <View style={styles.spacer} />
         <Button
           title={t.settings.recurringTransactions}
-          onPress={() => onNavigateRecurring?.()}
+          onPress={() => navigation.navigate('RecurringTransactions')}
           variant="secondary"
           fullWidth
         />
         <View style={styles.spacer} />
         <Button
           title={t.settings.reports}
-          onPress={() => onNavigateReports?.()}
+          onPress={() => navigation.navigate('ReportsHub')}
           variant="secondary"
           fullWidth
         />
@@ -430,10 +407,14 @@ export function SettingsScreen({
         </Text>
       </Card>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

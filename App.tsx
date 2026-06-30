@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/shared/theme';
 import { LanguageProvider, useLanguage } from './src/shared/localization/LanguageContext';
 import { AppNavigator } from './src/shared/navigation/AppNavigator';
@@ -59,7 +60,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <AppContent />
+        <SafeAreaProvider>
+          <AppContent />
+        </SafeAreaProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

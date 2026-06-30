@@ -54,6 +54,8 @@ export const en = {
     newPin: 'New PIN',
     pinChanged: 'PIN changed successfully',
     pinChangeFailed: 'Failed to change PIN',
+    invalidCurrentPin: 'Current PIN is incorrect',
+    pinSameAsCurrent: 'New PIN must be different from current PIN',
   },
   transaction: {
     title: 'Transactions',

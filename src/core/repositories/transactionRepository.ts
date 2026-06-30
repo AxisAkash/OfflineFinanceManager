@@ -132,14 +132,16 @@ export class TransactionRepository extends BaseRepository {
 
   async getDateRangeTotals(startDate: string, endDate: string): Promise<{ income: number; expense: number }> {
     const db = await this.dbPromise;
-    const incomeResult = await db.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
-      ['income', startDate, endDate]
-    );
-    const expenseResult = await db.getFirstAsync<{ total: number }>(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
-      ['expense', startDate, endDate]
-    );
+    const [incomeResult, expenseResult] = await Promise.all([
+      db.getFirstAsync<{ total: number }>(
+        'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
+        ['income', startDate, endDate]
+      ),
+      db.getFirstAsync<{ total: number }>(
+        'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = ? AND date >= ? AND date <= ?',
+        ['expense', startDate, endDate]
+      ),
+    ]);
 
     return {
       income: incomeResult?.total || 0,

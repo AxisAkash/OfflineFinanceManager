@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Animated, TouchableOpacity } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
@@ -13,13 +14,11 @@ import { categoryRepository } from '../../../core/repositories/categoryRepositor
 import { Transaction, Category, Wallet } from '../../../shared/types';
 import { formatCurrency } from '../../../shared/utils';
 
-interface DashboardScreenProps {
-  onAddTransaction?: () => void;
-}
-
-export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
+export function DashboardScreen() {
   const { colors } = useTheme();
   const { t } = useLanguage();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -124,9 +123,9 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
           title={t.dashboard.noTransactions}
           description={t.dashboard.noTransactionsDescription}
           actionLabel={t.dashboard.addFirst}
-          onAction={onAddTransaction}
+          onAction={() => navigation.navigate('AddTransaction')}
         />
-        <FAB onPress={onAddTransaction || (() => {})} />
+        <FAB onPress={() => navigation.navigate('AddTransaction')} />
       </View>
     );
   }
@@ -146,7 +145,7 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
   const currentWallet = wallets[activeWalletIndex];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -286,8 +285,8 @@ export function DashboardScreen({ onAddTransaction }: DashboardScreenProps) {
           )}
         </Animated.View>
       </ScrollView>
-      <FAB onPress={onAddTransaction || (() => {})} />
-    </View>
+      <FAB onPress={() => navigation.navigate('AddTransaction')} />
+    </SafeAreaView>
   );
 }
 
@@ -297,7 +296,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.huge + 60,
+    paddingBottom: 100,
   },
   walletCard: {
     borderWidth: 1,

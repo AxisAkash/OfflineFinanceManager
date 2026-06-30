@@ -133,6 +133,7 @@ export type RootStackParamList = {
   RecurringTransactions: undefined;
   ReportsHub: undefined;
   CreateBudget: { categoryId?: string } | undefined;
+  ChangePin: undefined;
 };
 
 export type AuthStackParamList = {

@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList, Category, Transaction } from '../../../shared/types';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
@@ -8,17 +10,11 @@ import { EmptyState, LoadingScreen, ErrorMessage, FAB } from '../../../shared/co
 import { TransactionItem } from '../components/TransactionItem';
 import { useTransactions } from '../hooks/useTransactions';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
-import { Category, Transaction } from '../../../shared/types';
 
-interface TransactionsScreenProps {
-  onAddTransaction?: () => void;
-}
-
-export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps) {
+export function TransactionsScreen() {
   const { colors } = useTheme();
   const { t, translate } = useLanguage();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     transactions,
     isLoading,
@@ -48,10 +44,8 @@ export function TransactionsScreen({ onAddTransaction }: TransactionsScreenProps
   }, [navigation]);
 
   const handleAddTransaction = useCallback(() => {
-    if (onAddTransaction) {
-      onAddTransaction();
-    }
-  }, [onAddTransaction]);
+    navigation.navigate('AddTransaction');
+  }, [navigation]);
 
   if (isLoading) {
     return (
@@ -132,6 +126,6 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
   },
   list: {
-    paddingBottom: spacing.huge + 60,
+    paddingBottom: 100,
   },
 });

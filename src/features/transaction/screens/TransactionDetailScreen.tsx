@@ -131,7 +131,7 @@ export function TransactionDetailScreen({
             {transaction.description || category?.name || t.common.noData}
           </Text>
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
             {t.transaction.category}
@@ -143,7 +143,7 @@ export function TransactionDetailScreen({
             </Text>
           </View>
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
             {t.transaction.date}
@@ -152,7 +152,7 @@ export function TransactionDetailScreen({
             {formatDate(transaction.date)}
           </Text>
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
             {t.transaction.wallet}
@@ -163,7 +163,7 @@ export function TransactionDetailScreen({
         </View>
         {transaction.isRecurring && (
           <>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
                 {t.transaction.recurring}
@@ -248,9 +248,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'transparent',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'transparent',
   },
   actions: {
     marginTop: spacing.lg,
