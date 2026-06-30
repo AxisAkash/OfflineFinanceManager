@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/shared/theme';
 import { LanguageProvider, useLanguage } from './src/shared/localization/LanguageContext';
 import { AppNavigator } from './src/shared/navigation/AppNavigator';
+import { ErrorBoundary } from './src/shared/components/ErrorBoundary';
 import { initializeDatabase } from './src/core/database/connection';
 import { typography } from './src/shared/theme/spacing';
 
@@ -58,13 +59,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <SafeAreaProvider>
-          <AppContent />
-        </SafeAreaProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <LanguageProvider>
+          <SafeAreaProvider>
+            <AppContent />
+          </SafeAreaProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

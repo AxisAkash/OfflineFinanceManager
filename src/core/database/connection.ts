@@ -36,13 +36,22 @@ export async function initializeDatabase(): Promise<void> {
     await runMigrations(database);
   }
 
-  await seedDefaultCategories(database);
-
-  const validation = await validateSchema(database);
-  if (!validation.isValid) {
-    const errorMsg = formatValidationErrors(validation);
+  try {
+    await seedDefaultCategories(database);
+  } catch (seedErr) {
     // eslint-disable-next-line no-console
-    console.warn(`[DB] Schema validation issues: ${errorMsg}`);
+    console.warn('[DB] Category seeding failed (non-fatal):', seedErr);
+  }
+
+  try {
+    const validation = await validateSchema(database);
+    if (!validation.isValid) {
+      const errorMsg = formatValidationErrors(validation);
+      // eslint-disable-next-line no-console
+      console.warn(`[DB] Schema validation issues: ${errorMsg}`);
+    }
+  } catch {
+    // Schema validation is non-critical
   }
 }
 

@@ -7,3 +7,4 @@ export { ErrorMessage } from './ErrorMessage';
 export { LoadingScreen } from './LoadingScreen';
 export { FAB } from './FAB';
 export { Snackbar } from './Snackbar';
+export { ErrorBoundary } from './ErrorBoundary';
