@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { DATABASE_NAME, CREATE_TABLES, CREATE_INDEXES } from './schema';
+import { DATABASE_NAME, DATABASE_VERSION, CREATE_TABLES, CREATE_INDEXES } from './schema';
 import { runMigrations, getSchemaVersion, setSchemaVersion } from './migrations';
 import { validateSchema, formatValidationErrors } from './validation';
 
@@ -26,7 +26,7 @@ export async function initializeDatabase(): Promise<void> {
     try {
       await database.execAsync(CREATE_TABLES);
       await database.execAsync(CREATE_INDEXES);
-      await setSchemaVersion(database, 2);
+      await setSchemaVersion(database, DATABASE_VERSION);
       await database.execAsync('COMMIT');
     } catch (err) {
       await database.execAsync('ROLLBACK');

@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { DATABASE_VERSION } from './schema';
 
 export interface Migration {
   version: number;
@@ -255,5 +256,3 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     }
   }
 }
-
-import { DATABASE_VERSION } from './schema';
