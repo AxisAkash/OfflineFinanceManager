@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getSchemaVersion, setSchemaVersion, runMigrations } from '../migrations';
+import { DATABASE_VERSION } from '../schema';
 
 jest.mock('expo-sqlite');
 
@@ -46,7 +47,7 @@ describe('Migration System', () => {
 
   it('should skip migrations if already at target version', async () => {
     const { db, store } = createMockDb();
-    store['schema_version'] = '2';
+    store['schema_version'] = String(DATABASE_VERSION);
     const runSpy = jest.spyOn(db, 'runAsync');
     await runMigrations(db as unknown as SQLiteDatabase);
     expect(runSpy).not.toHaveBeenCalled();
@@ -54,7 +55,7 @@ describe('Migration System', () => {
 
   it('should not throw when schema version matches', async () => {
     const { db, store } = createMockDb();
-    store['schema_version'] = '2';
+    store['schema_version'] = String(DATABASE_VERSION);
     await expect(runMigrations(db as unknown as SQLiteDatabase)).resolves.not.toThrow();
   });
 

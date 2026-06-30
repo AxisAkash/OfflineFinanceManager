@@ -1,8 +1,8 @@
 import { EXPECTED_TABLES, TABLE_COLUMNS, EXPECTED_INDEXES, DATABASE_VERSION } from '../schema';
 
 describe('Database Schema Definition', () => {
-  it('should have DATABASE_VERSION set to 2', () => {
-    expect(DATABASE_VERSION).toBe(2);
+  it('should have DATABASE_VERSION set to 3', () => {
+    expect(DATABASE_VERSION).toBe(3);
   });
 
   it('should have 11 expected tables', () => {
