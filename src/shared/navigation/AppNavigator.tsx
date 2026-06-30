@@ -170,13 +170,10 @@ function AuthNavigator({
   );
 }
 
-function ModalHeader({ title, onClose }: { title: string; onClose: () => void }) {
-  const { colors } = useTheme();
+function ModalHeader({ onClose }: { onClose: () => void }) {
   return (
     <View style={modalStyles.header}>
       <Button title="Close" variant="ghost" size="sm" onPress={onClose} />
-      <Text style={[modalStyles.title, { color: colors.text }]}>{title}</Text>
-      <View style={{ flex: 1 }} />
     </View>
   );
 }
@@ -189,9 +186,6 @@ const modalStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-  },
-  title: {
-    ...typography.h3,
   },
 });
 
@@ -229,7 +223,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Add Transaction" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <AddTransactionScreen
                     onSuccess={() => navigation.goBack()}
                     onCancel={() => navigation.goBack()}
@@ -250,7 +244,7 @@ export function AppNavigator() {
                 }
                 return (
                   <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                    <ModalHeader title="Edit Transaction" onClose={() => navigation.goBack()} />
+                    <ModalHeader onClose={() => navigation.goBack()} />
                     <AddTransactionScreen
                       transactionId={transactionId}
                       onSuccess={() => navigation.goBack()}
@@ -289,7 +283,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Wallets" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <WalletScreen />
                 </View>
               )}
@@ -300,7 +294,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Savings Goals" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <SavingsScreen />
                 </View>
               )}
@@ -311,7 +305,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Debt Tracker" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <DebtScreen />
                 </View>
               )}
@@ -322,7 +316,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Recurring Transactions" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <RecurringScreen />
                 </View>
               )}
@@ -333,7 +327,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Reports" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <ReportsScreen />
                 </View>
               )}
@@ -344,7 +338,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Create Budget" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <BudgetScreen onCreateBudget={() => navigation.goBack()} isCreating />
                 </View>
               )}
@@ -355,7 +349,7 @@ export function AppNavigator() {
             >
               {({ navigation }) => (
                 <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                  <ModalHeader title="Change PIN" onClose={() => navigation.goBack()} />
+                  <ModalHeader onClose={() => navigation.goBack()} />
                   <ChangePinScreen
                     onChangePin={changePin}
                     onClose={() => navigation.goBack()}

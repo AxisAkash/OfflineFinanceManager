@@ -7,12 +7,13 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, LoadingScreen } from '../../../shared/components';
+import { Card, LoadingScreen, ScreenHeader } from '../../../shared/components';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { walletRepository } from '../../../core/repositories/walletRepository';
@@ -218,15 +219,13 @@ export function ReportsScreen() {
   }
 
   return (
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={t.reports.title} />
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={styles.scrollView}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, { color: colors.text }]}>{t.reports.title}</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        {t.reports.description}
-      </Text>
 
       {/* Monthly Overview Card */}
       <Card style={styles.chartCard}>
@@ -373,6 +372,7 @@ export function ReportsScreen() {
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -380,17 +380,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.huge,
-  },
-  title: {
-    ...typography.h2,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.h3,

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
+import { EmptyState, LoadingScreen, ErrorMessage, Button, Input, ScreenHeader } from '../../../shared/components';
 import { recurringRepository } from '../../../core/repositories/recurringRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { walletRepository } from '../../../core/repositories/walletRepository';
@@ -117,7 +118,15 @@ export function RecurringScreen() {
 
   if (recurring.length === 0 && !showCreate) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader
+          title={t.recurring.title}
+          rightAction={
+            <TouchableOpacity onPress={() => setShowCreate(true)}>
+              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+            </TouchableOpacity>
+          }
+        />
         <EmptyState
           icon={'\uD83D\uDD04'}
           title={t.recurring.noRecurring}
@@ -125,15 +134,15 @@ export function RecurringScreen() {
           actionLabel={t.recurring.addFirst}
           onAction={() => setShowCreate(true)}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.recurring.add}</Text>
+          <Text style={[styles.formTitle, { color: colors.text }]}>{t.recurring.add}</Text>
           <View style={[styles.typeToggle, { backgroundColor: colors.surfaceVariant }]}>
             <TouchableOpacity
               style={[styles.typeButton, type === 'expense' && { backgroundColor: colors.expense }]}
@@ -197,12 +206,14 @@ export function RecurringScreen() {
         </ScrollView>
       ) : (
         <>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>{t.recurring.title}</Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)}>
-              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader
+            title={t.recurring.title}
+            rightAction={
+              <TouchableOpacity onPress={() => setShowCreate(true)}>
+                <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+              </TouchableOpacity>
+            }
+          />
           <FlatList
             data={recurring}
             keyExtractor={(item) => item.id}
@@ -234,21 +245,13 @@ export function RecurringScreen() {
           />
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: { ...typography.h2 },
+  formTitle: { ...typography.h2, marginBottom: spacing.lg },
   addButton: { ...typography.button },
   content: { padding: spacing.lg, paddingBottom: spacing.huge },
   fieldLabel: { ...typography.label, marginBottom: spacing.sm, marginTop: spacing.md },

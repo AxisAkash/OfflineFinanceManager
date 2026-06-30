@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/components';
+import { EmptyState, LoadingScreen, ErrorMessage, ScreenHeader } from '../../../shared/components';
 import { useWallets } from '../hooks/useWallets';
 import { Wallet } from '../../../shared/types';
 import { formatCurrency } from '../../../shared/utils';
@@ -61,14 +61,14 @@ export function WalletScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          {t.wallet.title}
-        </Text>
-        <Text style={[styles.totalBalance, { color: colors.primary }]}>
-          {t.wallet.totalBalance}: {formatCurrency(totalBalance)}
-        </Text>
-      </View>
+      <ScreenHeader
+        title={t.wallet.title}
+        rightAction={
+          <Text style={{ color: colors.primary, ...typography.numberSmall }}>
+            {formatCurrency(totalBalance)}
+          </Text>
+        }
+      />
 
       {wallets.length === 0 ? (
         <EmptyState
@@ -116,17 +116,6 @@ export function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: {
-    ...typography.h2,
   },
   totalBalance: {
     ...typography.numberSmall,

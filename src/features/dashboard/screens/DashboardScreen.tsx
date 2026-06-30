@@ -5,7 +5,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, SkeletonList, ErrorMessage, EmptyState, FAB } from '../../../shared/components';
+import { Card, SkeletonList, ErrorMessage, EmptyState, FAB, ScreenHeader } from '../../../shared/components';
 import { TransactionItem } from '../../transaction/components/TransactionItem';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { walletRepository } from '../../../core/repositories/walletRepository';
@@ -146,6 +146,7 @@ export function DashboardScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={t.dashboard.title} />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={

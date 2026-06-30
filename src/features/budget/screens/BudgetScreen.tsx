@@ -8,11 +8,12 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, ScreenHeader } from '../../../shared/components';
 import { budgetRepository } from '../../../core/repositories/budgetRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { Budget, Category } from '../../../shared/types';
@@ -162,7 +163,15 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
 
   if (budgets.length === 0 && !showCreate) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader
+          title={t.budget.title}
+          rightAction={
+            <TouchableOpacity onPress={() => setShowCreate(true)}>
+              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+            </TouchableOpacity>
+          }
+        />
         <EmptyState
           icon={'\uD83D\uDCCA'}
           title={t.budget.noBudgets}
@@ -170,15 +179,15 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
           actionLabel={t.budget.createFirst}
           onAction={() => setShowCreate(true)}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{editingBudget ? t.budget.edit : t.budget.create}</Text>
+          <Text style={[styles.formTitle, { color: colors.text }]}>{editingBudget ? t.budget.edit : t.budget.create}</Text>
 
           <Text style={[styles.fieldLabel, { color: colors.text }]}>{t.budget.category}</Text>
           <View style={styles.categoryGrid}>
@@ -276,16 +285,14 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
         </ScrollView>
       ) : (
         <>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {t.budget.title}
-            </Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)}>
-              <Text style={[styles.addButton, { color: colors.primary }]}>
-                + New
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader
+            title={t.budget.title}
+            rightAction={
+              <TouchableOpacity onPress={() => setShowCreate(true)}>
+                <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+              </TouchableOpacity>
+            }
+          />
 
           {overview.totalBudget > 0 && (
             <Card style={styles.overviewCard}>
@@ -382,7 +389,7 @@ export function BudgetScreen({ onCreateBudget: _onCreateBudget, isCreating }: Bu
           />
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -390,16 +397,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: {
+  formTitle: {
     ...typography.h2,
+    marginBottom: spacing.lg,
   },
   addButton: {
     ...typography.button,

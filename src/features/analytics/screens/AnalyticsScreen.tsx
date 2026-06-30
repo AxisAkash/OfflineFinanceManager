@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography, borderRadius } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, ScreenHeader } from '../../../shared/components';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
 import { Category } from '../../../shared/types';
@@ -126,7 +127,8 @@ export function AnalyticsScreen() {
 
   if (monthlyIncome === 0 && monthlyExpenses === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader title={t.analytics.title} />
         <EmptyState
           icon={'\uD83D\uDCCA'}
           title={t.analytics.noData}
@@ -134,7 +136,7 @@ export function AnalyticsScreen() {
           actionLabel={t.analytics.addFirstTransaction}
           onAction={() => navigation.navigate('AddTransaction')}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -144,14 +146,12 @@ export function AnalyticsScreen() {
   );
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={[styles.title, { color: colors.text }]}>
-        {t.analytics.title}
-      </Text>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={t.analytics.title} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
 
       <View style={styles.summaryRow}>
         <Card style={[styles.summaryCard, { borderLeftColor: colors.income, borderLeftWidth: 3 }]}>
@@ -294,6 +294,7 @@ export function AnalyticsScreen() {
 
       <View style={styles.bottomSpacer} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -304,10 +305,6 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.huge,
-  },
-  title: {
-    ...typography.h2,
-    marginBottom: spacing.lg,
   },
   summaryRow: {
     flexDirection: 'row',

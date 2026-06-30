@@ -7,7 +7,7 @@ import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { RootStackParamList } from '../../../shared/types';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { Card, Button } from '../../../shared/components';
+import { Card, Button, ScreenHeader } from '../../../shared/components';
 import { getStorageUsage, getBackupInfo, saveBackup, loadBackup, exportBackup } from '../../../core/storage';
 import { transactionRepository } from '../../../core/repositories/transactionRepository';
 import { walletRepository } from '../../../core/repositories/walletRepository';
@@ -241,12 +241,12 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <ScreenHeader title={t.settings.title} />
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>{t.settings.title}</Text>
 
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
         {t.settings.security}
@@ -421,10 +421,6 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.huge,
-  },
-  screenTitle: {
-    ...typography.h2,
-    marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.caption,

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar, ScreenHeader } from '../../../shared/components';
 import { savingsRepository } from '../../../core/repositories/savingsRepository';
 import { SavingsGoal } from '../../../shared/types';
 import { formatCurrency, formatDate, generateId } from '../../../shared/utils';
@@ -138,7 +139,15 @@ export function SavingsScreen() {
 
   if (goals.length === 0 && !showCreate) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader
+          title={t.savings.title}
+          rightAction={
+            <TouchableOpacity onPress={() => setShowCreate(true)}>
+              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+            </TouchableOpacity>
+          }
+        />
         <EmptyState
           icon={'\uD83C\uDFAF'}
           title={t.savings.noGoals}
@@ -146,15 +155,15 @@ export function SavingsScreen() {
           actionLabel={t.savings.createFirst}
           onAction={() => setShowCreate(true)}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{editingGoal ? t.budget.edit : t.savings.create}</Text>
+          <Text style={[styles.formTitle, { color: colors.text }]}>{editingGoal ? t.budget.edit : t.savings.create}</Text>
           <Input
             label={t.savings.name}
             value={name}
@@ -194,16 +203,14 @@ export function SavingsScreen() {
         </ScrollView>
       ) : (
         <>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {t.savings.title}
-            </Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)}>
-              <Text style={[styles.addButton, { color: colors.primary }]}>
-                + New
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader
+            title={t.savings.title}
+            rightAction={
+              <TouchableOpacity onPress={() => setShowCreate(true)}>
+                <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+              </TouchableOpacity>
+            }
+          />
           <FlatList
             data={goals}
             keyExtractor={(item) => item.id}
@@ -314,7 +321,7 @@ export function SavingsScreen() {
         type={snackbar.type}
         onDismiss={() => setSnackbar(prev => ({ ...prev, visible: false }))}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -322,16 +329,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: {
+  formTitle: {
     ...typography.h2,
+    marginBottom: spacing.lg,
   },
   addButton: {
     ...typography.button,

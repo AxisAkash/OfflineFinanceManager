@@ -8,3 +8,4 @@ export { LoadingScreen } from './LoadingScreen';
 export { FAB } from './FAB';
 export { Snackbar } from './Snackbar';
 export { ErrorBoundary } from './ErrorBoundary';
+export { ScreenHeader } from './ScreenHeader';

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
 import { spacing, typography } from '../../../shared/theme/spacing';
-import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar } from '../../../shared/components';
+import { Card, EmptyState, LoadingScreen, ErrorMessage, Button, Input, Snackbar, ScreenHeader } from '../../../shared/components';
 import { debtRepository } from '../../../core/repositories/debtRepository';
 import { Debt } from '../../../shared/types';
 import { formatCurrency, formatDate, formatPercentage, generateId } from '../../../shared/utils';
@@ -152,7 +153,15 @@ export function DebtScreen() {
 
   if (debts.length === 0 && !showCreate) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader
+          title={t.debt.title}
+          rightAction={
+            <TouchableOpacity onPress={() => setShowCreate(true)}>
+              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+            </TouchableOpacity>
+          }
+        />
         <EmptyState
           icon={'\uD83D\uDCB8'}
           title={t.debt.noDebts}
@@ -160,7 +169,7 @@ export function DebtScreen() {
           actionLabel={t.debt.addFirst}
           onAction={() => setShowCreate(true)}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -168,10 +177,10 @@ export function DebtScreen() {
   const totalOwed = debts.reduce((sum, d) => sum + d.totalAmount, 0);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       {showCreate ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={[styles.title, { color: colors.text }]}>{editingDebt ? t.debt.edit : t.debt.add}</Text>
+          <Text style={[styles.formTitle, { color: colors.text }]}>{editingDebt ? t.debt.edit : t.debt.add}</Text>
           <Input label={t.debt.name} value={name} onChangeText={setName} placeholder={t.debt.namePlaceholder} />
           <Input label={t.debt.totalAmount} value={totalAmount} onChangeText={setTotalAmount} keyboardType="decimal-pad" placeholder="0.00" />
           <Input label={t.debt.interestRate} value={interestRate} onChangeText={setInterestRate} keyboardType="decimal-pad" placeholder="0.00" />
@@ -186,12 +195,14 @@ export function DebtScreen() {
         </ScrollView>
       ) : (
         <>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>{t.debt.title}</Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)}>
-              <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
-            </TouchableOpacity>
-          </View>
+          <ScreenHeader
+            title={t.debt.title}
+            rightAction={
+              <TouchableOpacity onPress={() => setShowCreate(true)}>
+                <Text style={[styles.addButton, { color: colors.primary }]}>+ New</Text>
+              </TouchableOpacity>
+            }
+          />
 
           <Card style={styles.overviewCard}>
             <View style={styles.overviewRow}>
@@ -310,21 +321,13 @@ export function DebtScreen() {
         type={snackbar.type}
         onDismiss={() => setSnackbar(prev => ({ ...prev, visible: false }))}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: { ...typography.h2 },
+  formTitle: { ...typography.h2, marginBottom: spacing.lg },
   addButton: { ...typography.button },
   content: { padding: spacing.lg, paddingBottom: spacing.huge },
   createActions: { marginTop: spacing.xl },

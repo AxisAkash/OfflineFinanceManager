@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { Text, StyleSheet, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, Category, Transaction } from '../../../shared/types';
 import { useTheme } from '../../../shared/theme';
 import { useLanguage } from '../../../shared/localization/LanguageContext';
-import { spacing, typography } from '../../../shared/theme/spacing';
-import { EmptyState, LoadingScreen, ErrorMessage, FAB } from '../../../shared/components';
+import { typography } from '../../../shared/theme/spacing';
+import { EmptyState, LoadingScreen, ErrorMessage, FAB, ScreenHeader } from '../../../shared/components';
 import { TransactionItem } from '../components/TransactionItem';
 import { useTransactions } from '../hooks/useTransactions';
 import { categoryRepository } from '../../../core/repositories/categoryRepository';
@@ -49,23 +50,26 @@ export function TransactionsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader title={t.transaction.title} />
         <LoadingScreen type="list" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader title={t.transaction.title} />
         <ErrorMessage message={error} onRetry={refresh} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScreenHeader title={t.transaction.title} />
         <EmptyState
           icon={'\uD83D\uDCB3'}
           title={t.transaction.noTransactions}
@@ -74,20 +78,20 @@ export function TransactionsScreen() {
           onAction={handleAddTransaction}
         />
         <FAB onPress={handleAddTransaction} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          {t.transaction.title}
-        </Text>
-        <Text style={[styles.count, { color: colors.textSecondary }]}>
-          {translate('transaction.total', { count: transactions.length })}
-        </Text>
-      </View>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        title={t.transaction.title}
+        rightAction={
+          <Text style={[styles.count, { color: colors.textSecondary }]}>
+            {translate('transaction.total', { count: transactions.length })}
+          </Text>
+        }
+      />
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
@@ -103,24 +107,13 @@ export function TransactionsScreen() {
         showsVerticalScrollIndicator={false}
       />
       <FAB onPress={handleAddTransaction} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-  },
-  title: {
-    ...typography.h2,
   },
   count: {
     ...typography.bodySmall,
